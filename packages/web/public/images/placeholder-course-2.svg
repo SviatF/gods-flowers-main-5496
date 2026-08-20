@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#EFE8DF"/>
+  <g fill="none" stroke="#A2988D" stroke-width="2" opacity="0.55">
+    <circle cx="400" cy="340" r="104"/>
+    <path d="M400 340 L400 740"/>
+    <path d="M400 500 q -88 -50 -128 -20"/>
+    <path d="M400 600 q 88 -50 128 -20"/>
+  </g>
+  <text x="50%" y="90" text-anchor="middle" font-family="Georgia, serif" font-size="36" fill="#A2988D" letter-spacing="6">800 × 1000</text>
+</svg>

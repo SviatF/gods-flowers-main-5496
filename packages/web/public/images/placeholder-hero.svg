@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
+  <rect width="1200" height="1500" fill="#EFE8DF"/>
+  <g fill="none" stroke="#A2988D" stroke-width="2" opacity="0.55">
+    <circle cx="600" cy="510" r="156"/>
+    <path d="M600 510 L600 1110"/>
+    <path d="M600 750 q -132 -75 -192 -30"/>
+    <path d="M600 900 q 132 -75 192 -30"/>
+  </g>
+  <text x="50%" y="135" text-anchor="middle" font-family="Georgia, serif" font-size="54" fill="#A2988D" letter-spacing="6">1200 × 1500</text>
+</svg>

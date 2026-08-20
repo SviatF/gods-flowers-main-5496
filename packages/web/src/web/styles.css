@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-cream: #fffcf5;
+  --color-sand: #f6f1ea;
+  --color-linen: #efe8df;
+  --color-taupe: #a2988d;
+  --color-taupe-deep: #7c726a;
+  --color-ink: #333333;
+  --color-ink-soft: #6b655f;
+  --color-terracotta: #d64930;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-linen);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-taupe);
+    color: var(--color-cream);
+  }
+}
+
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .container-x {
+      padding-inline: 40px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container-x {
+      padding-inline: 64px;
+    }
+  }
+
+  /* Full-bleed row that keeps the container's left/right gutter */
+  .edge-x {
+    padding-inline: 20px;
+    scroll-padding-inline: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .edge-x {
+      padding-inline: 40px;
+      scroll-padding-inline: 40px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .edge-x {
+      padding-inline: max(64px, calc((100vw - 1280px) / 2 + 64px));
+      scroll-padding-inline: max(64px, calc((100vw - 1280px) / 2 + 64px));
+    }
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-taupe-deep);
+  }
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Marquee */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Horizontal snap carousel */
+.snap-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
