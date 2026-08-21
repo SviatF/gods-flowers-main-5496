@@ -1,7 +1,7 @@
 import { ArrowDownRight } from "lucide-react";
 import { hero } from "../../content/site";
 
-const HERO_IMAGE = hero.image;
+const HERO_IMAGE = "/images/hero-original.png";
 
 function go(href: string) {
   document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
