@@ -14,7 +14,7 @@ export function Courses() {
             обирай
           </span>
           <h2 className="font-display text-[clamp(2.4rem,6vw,4.75rem)] uppercase leading-none tracking-[0.08em] text-ink">
-            свій курс
+            свій формат
           </h2>
         </div>
 
