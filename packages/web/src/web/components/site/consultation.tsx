@@ -11,8 +11,8 @@ export function Consultation() {
         <div className="reveal flex flex-col gap-5">
           <span className="eyebrow">{consultation.eyebrow}</span>
           <h2 className="font-display text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95] text-ink">
-            Онлайн-
-            <span className="block italic text-taupe">консультація</span>
+            VIP-
+            <span className="block italic text-taupe">наставництво</span>
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-soft">
             {consultation.text}
@@ -43,7 +43,7 @@ export function Consultation() {
             onClick={() => go("#lead")}
             className="reveal mt-10 self-start rounded-full bg-ink px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-cream transition-colors duration-300 hover:bg-taupe-deep"
           >
-            Записатись
+            Подати заявку
           </button>
         </div>
       </div>
