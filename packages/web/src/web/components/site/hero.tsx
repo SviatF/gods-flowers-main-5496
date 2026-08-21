@@ -24,10 +24,10 @@ export function Hero() {
           <span className="reveal eyebrow text-cream lg:text-inherit">{hero.eyebrow}</span>
 
           <h1 className="reveal font-display leading-[0.88]" style={{ ["--reveal-delay" as string]: "80ms" }}>
-            <span className="block text-[clamp(1.8rem,3.8vw,3rem)] italic text-cream lg:text-ink">
+            <span className="block text-[clamp(3.24rem,6.84vw,5.4rem)] italic text-cream lg:text-ink">
               {hero.titleTop}
             </span>
-            <span className="block text-[clamp(1.05rem,1.9vw,1.45rem)] uppercase tracking-[0.14em] text-cream/90 lg:text-taupe">
+            <span className="block text-[clamp(1.89rem,3.42vw,2.61rem)] uppercase tracking-[0.14em] text-cream/90 lg:text-taupe">
               {hero.titleAccent}
             </span>
           </h1>
