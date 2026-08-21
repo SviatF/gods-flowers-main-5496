@@ -29,7 +29,11 @@ export function Courses() {
                 <img
                   src={course.image}
                   alt=""
-                  className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.05]"
+                  className={`aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-out ${
+                    i === 2
+                      ? "scale-[1.04] group-hover:scale-[1.08]"
+                      : "group-hover:scale-[1.05]"
+                  }`}
                 />
               </div>
 
