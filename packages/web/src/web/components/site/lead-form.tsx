@@ -62,7 +62,7 @@ export function LeadForm() {
         <div className="reveal flex flex-col gap-5">
           <span className="eyebrow">{lead.eyebrow}</span>
           <h2 className="font-display text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95] text-ink">
-            Залишити <span className="italic text-taupe">заявку</span>
+            Обрати <span className="italic text-taupe">програму</span>
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-soft">{lead.text}</p>
         </div>
@@ -123,7 +123,7 @@ export function LeadForm() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="eyebrow">Курс</span>
+                <span className="eyebrow">Програма</span>
                 <select
                   className={`${inputClass} cursor-pointer`}
                   value={fields.course}
@@ -145,7 +145,7 @@ export function LeadForm() {
                 rows={2}
                 value={fields.comment}
                 onChange={(e) => set("comment")(e.target.value)}
-                placeholder="Ваш досвід, питання, зручний час для дзвінка"
+                placeholder="Ваш досвід у флористиці, питання або зручний час для дзвінка"
               />
             </label>
 
