@@ -1,4 +1,3 @@
-import { ArrowDownRight } from "lucide-react";
 import { hero } from "../../content/site";
 
 const HERO_IMAGE = "/images/hero-original.png";
@@ -50,7 +49,6 @@ export function Hero() {
               className="group inline-flex items-center gap-3 rounded-full bg-cream px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-ink transition-colors duration-300 hover:bg-sand lg:bg-ink lg:text-cream lg:hover:bg-taupe-deep"
             >
               {hero.cta}
-              <ArrowDownRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
             </button>
             <button
               type="button"
