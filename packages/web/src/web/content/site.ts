@@ -69,7 +69,7 @@ export const courses = [
     text: "Для тих, хто хоче освоїти професію флориста з нуля, отримати системні знання та сформувати міцну базу для впевненої роботи з квітами.",
     meta: "Для початківців · професійна база",
     price: "199 €",
-    image: "/images/placeholder-course-1.svg",
+    image: "/images/block1.png",
   },
   {
     id: "flower-business",
@@ -78,7 +78,7 @@ export const courses = [
     text: "Покрокова програма для запуску та розвитку власного квіткового бізнесу. Від ідеї та структури — до продажів, клієнтів і системного росту.",
     meta: "Запуск · розвиток · системний бізнес",
     price: "799 €",
-    image: "/images/placeholder-course-2.svg",
+    image: "/images/block2.png",
   },
   {
     id: "vip-mentoring",
@@ -87,7 +87,7 @@ export const courses = [
     text: "Три місяці індивідуального супроводу, де ми разом запускаємо ваш квітковий бізнес: від концепції та закупівель до перших продажів і клієнтів.",
     meta: "3 місяці · індивідуальний супровід",
     price: "2999 €",
-    image: "/images/placeholder-course-3.svg",
+    image: "/images/block3.png",
   },
 ];
 
