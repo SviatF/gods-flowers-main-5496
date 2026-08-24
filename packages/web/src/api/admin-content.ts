@@ -4,11 +4,13 @@ import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { listLeads, updateLeadStatus, type LeadStatus } from "./lead-store";
 
 const SESSION_COOKIE = "gf_admin";
 const MAX_CONTENT_BYTES = 2_000_000;
 const MAX_IMAGE_BYTES = 8_000_000;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const LEAD_STATUSES = new Set<LeadStatus>(["new", "contacted", "closed"]);
 
 const defaultContentPath = fileURLToPath(
   new URL("../../data/site-content.json", import.meta.url),
@@ -139,6 +141,33 @@ export function registerAdminContentRoutes(app: Hono) {
       return c.json({ ok: true, savedAt: new Date().toISOString() });
     } catch (error) {
       return c.json({ error: error instanceof Error ? error.message : "Save failed" }, 500);
+    }
+  });
+
+  app.get("/api/admin/leads", async (c) => {
+    if (!auth(c)) return c.json({ error: "Unauthorized" }, 401);
+
+    try {
+      return c.json({ leads: await listLeads() }, 200, { "Cache-Control": "no-store" });
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : "Could not load leads" }, 500);
+    }
+  });
+
+  app.patch("/api/admin/leads/:id", async (c) => {
+    if (!auth(c)) return c.json({ error: "Unauthorized" }, 401);
+
+    const body = await c.req.json<{ status?: LeadStatus }>().catch(() => ({}));
+    if (!body.status || !LEAD_STATUSES.has(body.status)) {
+      return c.json({ error: "Invalid lead status" }, 400);
+    }
+
+    try {
+      const lead = await updateLeadStatus(c.req.param("id"), body.status);
+      if (!lead) return c.json({ error: "Lead not found" }, 404);
+      return c.json({ lead });
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : "Could not update lead" }, 500);
     }
   });
 
