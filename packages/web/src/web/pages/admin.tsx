@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
+import { AdminLeads } from "../components/admin-leads";
 import { getSiteContentSnapshot, type SiteContent } from "../content/site-runtime";
 
-type SectionKey = "hero" | "courses" | "advantages" | "consultation" | "cases" | "brand" | "lead";
+type SectionKey = "submissions" | "hero" | "courses" | "advantages" | "consultation" | "cases" | "brand" | "lead";
 
 type Status = "checking" | "login" | "ready";
 
 const sections: Array<{ key: SectionKey; label: string }> = [
+  { key: "submissions", label: "Заявки" },
   { key: "hero", label: "Hero" },
   { key: "courses", label: "Програми" },
   { key: "advantages", label: "Переваги" },
@@ -97,7 +99,7 @@ export default function AdminPage() {
   const [previewOnly, setPreviewOnly] = useState(false);
   const [password, setPassword] = useState("");
   const [content, setContent] = useState<SiteContent | null>(null);
-  const [section, setSection] = useState<SectionKey>("hero");
+  const [section, setSection] = useState<SectionKey>("submissions");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -235,6 +237,8 @@ export default function AdminPage() {
   if (!content) return null;
 
   const panel = (() => {
+    if (section === "submissions") return null;
+
     if (section === "hero") {
       return <div className="space-y-4">
         <Field label="Eyebrow" value={content.hero.eyebrow} onChange={(value) => change((draft) => { draft.hero.eyebrow = value; })} />
@@ -322,31 +326,50 @@ export default function AdminPage() {
           <button onClick={logout} className="mt-auto inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-white/60 hover:bg-white/10 hover:text-white"><LogOut className="size-4" />{previewOnly ? "На сайт" : "Вийти"}</button>
         </aside>
 
-        <main className="flex min-w-0 flex-col">
-          <div className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5">
-            <div className="flex items-center gap-3 text-sm text-neutral-500">
-              <span className="flex items-center gap-2"><Eye className="size-4" />Live preview</span>
-              {previewOnly ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">Зміни тільки для перегляду</span> : null}
-            </div>
-            <div className="flex items-center gap-3">
-              {notice ? <span className="max-w-sm truncate text-xs text-neutral-500">{notice}</span> : null}
-              <button onClick={save} disabled={saving} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${previewOnly ? "bg-neutral-500" : "bg-neutral-950"}`}>{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{previewOnly ? "Перевірити" : "Опублікувати"}</button>
-            </div>
-          </div>
-          <div className="min-h-0 flex-1 p-5">
-            <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-              <iframe ref={iframeRef} title="Live preview" src="/?cmsPreview=1" onLoad={() => sendPreview(content)} className="h-full w-full" />
-            </div>
-          </div>
+        <main className={`flex min-w-0 flex-col ${section === "submissions" ? "col-span-2" : ""}`}>
+          {section === "submissions" ? (
+            <>
+              <div className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-400">Адмінка</p>
+                  <p className="text-sm font-medium text-neutral-800">Заявки з сайту</p>
+                </div>
+                {previewOnly ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">Demo: реальні заявки зʼявляться на хостингу</span> : null}
+              </div>
+              <div className="min-h-0 flex-1">
+                <AdminLeads previewOnly={previewOnly} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5">
+                <div className="flex items-center gap-3 text-sm text-neutral-500">
+                  <span className="flex items-center gap-2"><Eye className="size-4" />Live preview</span>
+                  {previewOnly ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">Зміни тільки для перегляду</span> : null}
+                </div>
+                <div className="flex items-center gap-3">
+                  {notice ? <span className="max-w-sm truncate text-xs text-neutral-500">{notice}</span> : null}
+                  <button onClick={save} disabled={saving} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${previewOnly ? "bg-neutral-500" : "bg-neutral-950"}`}>{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{previewOnly ? "Перевірити" : "Опублікувати"}</button>
+                </div>
+              </div>
+              <div className="min-h-0 flex-1 p-5">
+                <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+                  <iframe ref={iframeRef} title="Live preview" src="/?cmsPreview=1" onLoad={() => sendPreview(content)} className="h-full w-full" />
+                </div>
+              </div>
+            </>
+          )}
         </main>
 
-        <aside className="min-h-0 overflow-y-auto border-l border-black/10 bg-white p-5">
-          <div className="mb-6">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">Редагування</p>
-            <h2 className="mt-1 text-xl font-semibold">{sections.find((item) => item.key === section)?.label}</h2>
-          </div>
-          {panel}
-        </aside>
+        {section !== "submissions" ? (
+          <aside className="min-h-0 overflow-y-auto border-l border-black/10 bg-white p-5">
+            <div className="mb-6">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">Редагування</p>
+              <h2 className="mt-1 text-xl font-semibold">{sections.find((item) => item.key === section)?.label}</h2>
+            </div>
+            {panel}
+          </aside>
+        ) : null}
       </div>
     </div>
   );
