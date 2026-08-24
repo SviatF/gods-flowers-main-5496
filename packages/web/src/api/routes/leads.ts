@@ -1,8 +1,6 @@
 import { z } from "zod";
-import { desc } from "drizzle-orm";
 import { base } from "../__core/app";
-import { db } from "../database";
-import * as schema from "../database/schema";
+import { createLead } from "../lead-store";
 
 const createInput = z.object({
   name: z.string().trim().min(2, "Вкажіть імʼя").max(80),
@@ -13,27 +11,15 @@ const createInput = z.object({
     .max(24)
     .regex(/^[0-9+()\-\s]+$/, "Некоректний номер"),
   email: z.string().trim().email("Некоректний email").optional().or(z.literal("")),
-  course: z.string().trim().min(1, "Оберіть курс").max(80),
+  course: z.string().trim().min(1, "Оберіть курс").max(120),
   comment: z.string().trim().max(600).optional().or(z.literal("")),
+  pageUrl: z.string().trim().max(800).optional().or(z.literal("")),
+  referrer: z.string().trim().max(800).optional().or(z.literal("")),
 });
 
 export const leads = {
   create: base.input(createInput).handler(async ({ input }) => {
-    const [row] = await db
-      .insert(schema.leads)
-      .values({
-        name: input.name,
-        phone: input.phone,
-        email: input.email ? input.email : null,
-        course: input.course,
-        comment: input.comment ? input.comment : null,
-      })
-      .returning();
-
+    const row = await createLead(input);
     return { id: row.id, createdAt: row.createdAt };
   }),
-
-  list: base.handler(() =>
-    db.select().from(schema.leads).orderBy(desc(schema.leads.createdAt)).limit(100),
-  ),
 };
