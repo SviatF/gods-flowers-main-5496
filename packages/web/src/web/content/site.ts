@@ -91,34 +91,28 @@ export const courses = [
 
 export const cases = [
   {
-    name: "Марта",
-    handle: "@marta.buketna",
-    text: "Прийшла з нуля після декрету, боялася навіть узяти секатор. Через чотири місяці після випуску відкрила прийом замовлень у своєму містечку і працює без вихідних у сезон.",
-    image: "/images/placeholder-case-1.svg",
+    name: "Лілія",
+    handle: "@lily_flowers_leszno",
+    text: "Проходила навчання та відкрила свою квіткову справу з нуля.",
+    image: "/images/case1.PNG",
   },
   {
-    name: "Юля",
-    handle: "@yulia.stems",
-    text: "Живе в Гданську і шукала справу, яку можна перевезти з собою. Тепер збирає букети для локальної кавʼярні та веде суботні майстеркласи для українок.",
-    image: "/images/placeholder-case-2.svg",
+    name: "Світлана",
+    handle: "@niikiia.s",
+    text: "Прийшла з нуля і тепер працює з дому.",
+    image: "/images/case2.PNG",
   },
   {
-    name: "Даша",
-    handle: "@dasha.florals",
-    text: "Окупила курс ще до фінального модуля: перше весілля взяла на четвертому тижні навчання і зібрала повне оформлення разом із кураторкою.",
-    image: "/images/placeholder-case-3.svg",
+    name: "Анна",
+    handle: "@anetti_druchkiv",
+    text: "Прийшла з нуля, тепер працює флористом у квітковому магазині.",
+    image: "/images/case3.PNG",
   },
   {
-    name: "Оксана",
-    handle: "@oksana.vaza",
-    text: "Мала невеликий магазин, але не розуміла, чому не заробляє. Перерахувала собівартість за нашою таблицею і підняла середній чек майже вдвічі.",
-    image: "/images/placeholder-case-4.svg",
-  },
-  {
-    name: "Ліза",
-    handle: "@liza.flowerlab",
-    text: "Найупертіша наша учениця: здала всі вісім робіт достроково. Зараз веде корпоративні підписки на квіти для трьох офісів у Львові.",
-    image: "/images/placeholder-case-5.svg",
+    name: "Анна",
+    handle: "@bloom_by_anna",
+    text: "Пройшла базове онлайн-навчання.",
+    image: "/images/case4.PNG",
   },
 ];
 
