@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
-import type { SiteContent } from "../content/site-runtime";
+import { getSiteContentSnapshot, type SiteContent } from "../content/site-runtime";
 
 type SectionKey = "hero" | "courses" | "advantages" | "consultation" | "cases" | "brand" | "lead";
 
-type Status = "checking" | "login" | "ready" | "unavailable";
+type Status = "checking" | "login" | "ready";
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "hero", label: "Hero" },
@@ -83,14 +83,30 @@ function ImageField({
   );
 }
 
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Не вдалося прочитати файл"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminPage() {
   const [status, setStatus] = useState<Status>("checking");
+  const [previewOnly, setPreviewOnly] = useState(false);
   const [password, setPassword] = useState("");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [section, setSection] = useState<SectionKey>("hero");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const openDemo = () => {
+    setContent(getSiteContentSnapshot());
+    setPreviewOnly(true);
+    setStatus("ready");
+  };
 
   const loadContent = async () => {
     const response = await fetch("/api/site-content", { cache: "no-store" });
@@ -104,16 +120,16 @@ export default function AdminPage() {
       fetch("/api/site-content", { cache: "no-store" }),
     ])
       .then(async ([sessionResponse, contentResponse]) => {
-        if (sessionResponse.status === 404 || contentResponse.status === 404) {
-          setStatus("unavailable");
+        if (!sessionResponse.ok || !contentResponse.ok) {
+          openDemo();
           return;
         }
         const session = await sessionResponse.json();
-        if (contentResponse.ok) setContent((await contentResponse.json()) as SiteContent);
-        if (!session.configured) setStatus("unavailable");
+        setContent((await contentResponse.json()) as SiteContent);
+        if (!session.configured) openDemo();
         else setStatus(session.authenticated ? "ready" : "login");
       })
-      .catch(() => setStatus("unavailable"));
+      .catch(openDemo);
   }, []);
 
   const sendPreview = (next: SiteContent) => {
@@ -147,16 +163,25 @@ export default function AdminPage() {
     }
     await loadContent();
     setPassword("");
+    setPreviewOnly(false);
     setStatus("ready");
   };
 
   const logout = async () => {
+    if (previewOnly) {
+      window.location.href = "/";
+      return;
+    }
     await fetch("/api/admin/logout", { method: "POST" });
     setStatus("login");
   };
 
   const save = async () => {
     if (!content) return;
+    if (previewOnly) {
+      setNotice("Демо-режим: зміни видно в preview, але на Vercel вони не зберігаються.");
+      return;
+    }
     setSaving(true);
     setNotice("");
     try {
@@ -177,6 +202,7 @@ export default function AdminPage() {
   };
 
   const upload = async (file: File) => {
+    if (previewOnly) return fileToDataUrl(file);
     const form = new FormData();
     form.append("file", file);
     const response = await fetch("/api/admin/upload", { method: "POST", body: form });
@@ -187,20 +213,6 @@ export default function AdminPage() {
 
   if (status === "checking") {
     return <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-white"><Loader2 className="size-7 animate-spin" /></div>;
-  }
-
-  if (status === "unavailable") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-white">
-        <div className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8">
-          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">GOD&apos;S FLOWERS CMS</p>
-          <h1 className="mb-4 text-3xl font-medium">Адмін-сервер ще не активний</h1>
-          <p className="leading-relaxed text-white/65">
-            Інтерфейс конструктора вже встановлений. Для запису файлів потрібен запуск проєкту через Bun/Node сервер і змінні ADMIN_PASSWORD та ADMIN_SESSION_SECRET. На статичному Vercel preview редагування не зберігається.
-          </p>
-        </div>
-      </div>
-    );
   }
 
   if (status === "login") {
@@ -302,19 +314,23 @@ export default function AdminPage() {
           <div className="mb-7 px-2 pt-2">
             <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">GOD&apos;S FLOWERS</p>
             <p className="mt-1 text-lg font-semibold">Mini Builder</p>
+            {previewOnly ? <span className="mt-2 inline-flex rounded-full bg-amber-400/15 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-amber-300">Demo mode</span> : null}
           </div>
           <nav className="space-y-1">
             {sections.map((item) => <button key={item.key} onClick={() => setSection(item.key)} className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${section === item.key ? "bg-white text-neutral-950" : "text-white/65 hover:bg-white/10 hover:text-white"}`}>{item.label}</button>)}
           </nav>
-          <button onClick={logout} className="mt-auto inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-white/60 hover:bg-white/10 hover:text-white"><LogOut className="size-4" />Вийти</button>
+          <button onClick={logout} className="mt-auto inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-white/60 hover:bg-white/10 hover:text-white"><LogOut className="size-4" />{previewOnly ? "На сайт" : "Вийти"}</button>
         </aside>
 
         <main className="flex min-w-0 flex-col">
           <div className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5">
-            <div className="flex items-center gap-2 text-sm text-neutral-500"><Eye className="size-4" />Live preview</div>
+            <div className="flex items-center gap-3 text-sm text-neutral-500">
+              <span className="flex items-center gap-2"><Eye className="size-4" />Live preview</span>
+              {previewOnly ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">Зміни тільки для перегляду</span> : null}
+            </div>
             <div className="flex items-center gap-3">
               {notice ? <span className="max-w-sm truncate text-xs text-neutral-500">{notice}</span> : null}
-              <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-neutral-950 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}Опублікувати</button>
+              <button onClick={save} disabled={saving} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${previewOnly ? "bg-neutral-500" : "bg-neutral-950"}`}>{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{previewOnly ? "Перевірити" : "Опублікувати"}</button>
             </div>
           </div>
           <div className="min-h-0 flex-1 p-5">
