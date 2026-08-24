@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Hono } from "hono";
+import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 
 const SESSION_COOKIE = "gf_admin";
@@ -63,7 +63,7 @@ async function saveContent(content: unknown) {
   await writeFile(contentPath, `${raw}\n`, "utf8");
 }
 
-function auth(c: Parameters<Parameters<Hono["use"]>[1]>[0]) {
+function auth(c: Context) {
   return validSession(getCookie(c, SESSION_COOKIE));
 }
 
