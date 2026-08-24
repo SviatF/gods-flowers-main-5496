@@ -10,7 +10,6 @@ const createInput = z.object({
     .min(9, "Вкажіть номер телефону")
     .max(24)
     .regex(/^[0-9+()\-\s]+$/, "Некоректний номер"),
-  email: z.string().trim().email("Некоректний email").optional().or(z.literal("")),
   course: z.string().trim().min(1, "Оберіть курс").max(120),
   comment: z.string().trim().max(600).optional().or(z.literal("")),
   pageUrl: z.string().trim().max(800).optional().or(z.literal("")),
