@@ -79,11 +79,11 @@ export function Cases() {
             className="reveal w-[78vw] shrink-0 snap-start sm:w-[380px]"
             style={{ ["--reveal-delay" as string]: `${Math.min(i, 3) * 90}ms` }}
           >
-            <div className="overflow-hidden rounded-[16px] bg-linen">
+            <div className="overflow-hidden rounded-[16px]">
               <img
                 src={item.image}
                 alt={`${item.name} — відгук`}
-                className="aspect-[7/9] w-full object-contain"
+                className="block h-auto w-full"
               />
             </div>
             <div className="flex flex-col gap-2.5 pt-6">
