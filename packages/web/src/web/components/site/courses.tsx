@@ -1,9 +1,6 @@
 import { ArrowRight } from "lucide-react";
-import { courses } from "../../content/site";
-
-function go(href: string) {
-  document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+import { courses, lead } from "../../content/site";
+import { openLeadApplication } from "./lead-modal";
 
 export function Courses() {
   return (
@@ -47,7 +44,7 @@ export function Courses() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => go("#lead")}
+                  onClick={() => openLeadApplication(lead.courseOptions[i])}
                   className="inline-flex items-center gap-3 whitespace-nowrap text-[11px] uppercase tracking-[0.18em] text-ink transition-colors hover:text-taupe-deep"
                 >
                   Детальніше
