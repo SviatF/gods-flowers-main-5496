@@ -9,7 +9,7 @@ export function Footer() {
           <div className="flex items-center gap-4">
             <img src={brand.logo} alt={brand.name} className="h-14 w-auto" />
             <span className="font-display text-[15px] tracking-[0.3em] text-ink">
-              GOD&apos;S FLOWERS
+              {brand.name}
             </span>
           </div>
 
@@ -38,7 +38,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col gap-3 border-t border-linen pt-8 text-[11px] uppercase tracking-[0.16em] text-taupe-deep sm:flex-row sm:justify-between">
-          <span>© {new Date().getFullYear()} GOD&apos;S FLOWERS</span>
+          <span>© {new Date().getFullYear()} {brand.name}</span>
           <span>Публічна оферта · Політика конфіденційності</span>
         </div>
       </div>

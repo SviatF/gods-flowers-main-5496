@@ -11,22 +11,23 @@ type Fields = {
   comment: string;
 };
 
-const empty: Fields = {
+const createEmpty = (): Fields => ({
   name: "",
   phone: "",
   email: "",
-  course: lead.courseOptions[0],
+  course: lead.courseOptions[0] ?? "",
   comment: "",
-};
+});
 
 const inputClass =
   "w-full border-0 border-b border-taupe/40 bg-transparent px-0 py-3 text-[15px] text-ink outline-none transition-colors placeholder:text-taupe focus:border-ink";
 
 export function LeadForm() {
-  const [fields, setFields] = useState<Fields>(empty);
+  const [fields, setFields] = useState<Fields>(() => createEmpty());
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const createLead = useCreateLead();
+  const [titleFirst, ...titleRest] = lead.title.split(" ");
 
   const set = (key: keyof Fields) => (value: string) =>
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -49,7 +50,7 @@ export function LeadForm() {
       {
         onSuccess: () => {
           setDone(true);
-          setFields(empty);
+          setFields(createEmpty());
         },
         onError: () => setError("Не вдалося надіслати заявку. Спробуйте ще раз."),
       },
@@ -62,7 +63,8 @@ export function LeadForm() {
         <div className="reveal flex flex-col gap-5">
           <span className="eyebrow">{lead.eyebrow}</span>
           <h2 className="font-display text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95] text-ink">
-            Обрати <span className="italic text-taupe">програму</span>
+            {titleFirst}{titleRest.length ? " " : ""}
+            {titleRest.length ? <span className="italic text-taupe">{titleRest.join(" ")}</span> : null}
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-soft">{lead.text}</p>
         </div>

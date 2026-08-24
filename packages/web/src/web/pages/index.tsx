@@ -1,4 +1,5 @@
 import { useReveal } from "../hooks/use-reveal";
+import { useSiteContentRevision } from "../components/site-content-provider";
 import { Header } from "../components/site/header";
 import { Hero } from "../components/site/hero";
 import { Advantages } from "../components/site/advantages";
@@ -10,6 +11,7 @@ import { Footer } from "../components/site/footer";
 
 function Index() {
   useReveal();
+  useSiteContentRevision();
 
   return (
     <div className="min-h-screen bg-cream">

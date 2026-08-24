@@ -1,0 +1,337 @@
+import { useEffect, useRef, useState } from "react";
+import { Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
+import type { SiteContent } from "../content/site-runtime";
+
+type SectionKey = "hero" | "courses" | "advantages" | "consultation" | "cases" | "brand" | "lead";
+
+type Status = "checking" | "login" | "ready" | "unavailable";
+
+const sections: Array<{ key: SectionKey; label: string }> = [
+  { key: "hero", label: "Hero" },
+  { key: "courses", label: "Програми" },
+  { key: "advantages", label: "Переваги" },
+  { key: "consultation", label: "VIP" },
+  { key: "cases", label: "Кейси" },
+  { key: "brand", label: "Контакти" },
+  { key: "lead", label: "Форма" },
+];
+
+const inputClass = "w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500";
+const labelClass = "mb-1.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-500";
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className={labelClass}>{label}</span>
+      <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function TextArea({ label, value, onChange, rows = 4 }: { label: string; value: string; onChange: (value: string) => void; rows?: number }) {
+  return (
+    <label className="block">
+      <span className={labelClass}>{label}</span>
+      <textarea className={`${inputClass} resize-y`} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function ImageField({
+  label,
+  value,
+  onChange,
+  onUpload,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onUpload: (file: File) => Promise<string>;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  return (
+    <div>
+      <span className={labelClass}>{label}</span>
+      <div className="mb-2 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
+        <img src={value} alt="" className="aspect-[16/9] w-full object-cover" />
+      </div>
+      <div className="flex gap-2">
+        <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} />
+        <label className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-xl bg-neutral-900 px-4 text-white transition hover:bg-neutral-700">
+          {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            disabled={uploading}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setUploading(true);
+              try {
+                onChange(await onUpload(file));
+              } finally {
+                setUploading(false);
+                event.target.value = "";
+              }
+            }}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  const [status, setStatus] = useState<Status>("checking");
+  const [password, setPassword] = useState("");
+  const [content, setContent] = useState<SiteContent | null>(null);
+  const [section, setSection] = useState<SectionKey>("hero");
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const loadContent = async () => {
+    const response = await fetch("/api/site-content", { cache: "no-store" });
+    if (!response.ok) throw new Error("Content API unavailable");
+    setContent((await response.json()) as SiteContent);
+  };
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/session", { cache: "no-store" }),
+      fetch("/api/site-content", { cache: "no-store" }),
+    ])
+      .then(async ([sessionResponse, contentResponse]) => {
+        if (sessionResponse.status === 404 || contentResponse.status === 404) {
+          setStatus("unavailable");
+          return;
+        }
+        const session = await sessionResponse.json();
+        if (contentResponse.ok) setContent((await contentResponse.json()) as SiteContent);
+        if (!session.configured) setStatus("unavailable");
+        else setStatus(session.authenticated ? "ready" : "login");
+      })
+      .catch(() => setStatus("unavailable"));
+  }, []);
+
+  const sendPreview = (next: SiteContent) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: "gods-flowers:preview", content: next },
+      window.location.origin,
+    );
+  };
+
+  const change = (mutate: (draft: SiteContent) => void) => {
+    setContent((current) => {
+      if (!current) return current;
+      const next = structuredClone(current);
+      mutate(next);
+      queueMicrotask(() => sendPreview(next));
+      return next;
+    });
+  };
+
+  const login = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setNotice("");
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!response.ok) {
+      setNotice(response.status === 503 ? "На сервері ще не заданий ADMIN_PASSWORD." : "Невірний пароль.");
+      return;
+    }
+    await loadContent();
+    setPassword("");
+    setStatus("ready");
+  };
+
+  const logout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" });
+    setStatus("login");
+  };
+
+  const save = async () => {
+    if (!content) return;
+    setSaving(true);
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/content", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(content),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Save failed");
+      setNotice("Зміни опубліковано на сайті.");
+      sendPreview(content);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Не вдалося зберегти зміни.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const upload = async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch("/api/admin/upload", { method: "POST", body: form });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Upload failed");
+    return result.path as string;
+  };
+
+  if (status === "checking") {
+    return <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-white"><Loader2 className="size-7 animate-spin" /></div>;
+  }
+
+  if (status === "unavailable") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-white">
+        <div className="max-w-lg rounded-3xl border border-white/10 bg-white/5 p-8">
+          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">GOD&apos;S FLOWERS CMS</p>
+          <h1 className="mb-4 text-3xl font-medium">Адмін-сервер ще не активний</h1>
+          <p className="leading-relaxed text-white/65">
+            Інтерфейс конструктора вже встановлений. Для запису файлів потрібен запуск проєкту через Bun/Node сервер і змінні ADMIN_PASSWORD та ADMIN_SESSION_SECRET. На статичному Vercel preview редагування не зберігається.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "login") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-white">
+        <form onSubmit={login} className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8">
+          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">GOD&apos;S FLOWERS CMS</p>
+          <h1 className="mb-8 text-3xl font-medium">Вхід в адмінку</h1>
+          <label className="mb-5 block">
+            <span className="mb-2 block text-xs text-white/60">Пароль</span>
+            <input autoFocus type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 outline-none focus:border-white/40" />
+          </label>
+          {notice ? <p className="mb-4 text-sm text-red-300">{notice}</p> : null}
+          <button className="w-full rounded-xl bg-white px-4 py-3 text-sm font-medium text-neutral-950">Увійти</button>
+        </form>
+      </div>
+    );
+  }
+
+  if (!content) return null;
+
+  const panel = (() => {
+    if (section === "hero") {
+      return <div className="space-y-4">
+        <Field label="Eyebrow" value={content.hero.eyebrow} onChange={(value) => change((draft) => { draft.hero.eyebrow = value; })} />
+        <Field label="Заголовок — рядок 1" value={content.hero.titleTop} onChange={(value) => change((draft) => { draft.hero.titleTop = value; })} />
+        <Field label="Заголовок — рядок 2" value={content.hero.titleAccent} onChange={(value) => change((draft) => { draft.hero.titleAccent = value; })} />
+        <TextArea label="Опис" value={content.hero.lead} onChange={(value) => change((draft) => { draft.hero.lead = value; })} />
+        <Field label="Основна кнопка" value={content.hero.cta} onChange={(value) => change((draft) => { draft.hero.cta = value; })} />
+        <Field label="Друга кнопка" value={content.hero.ctaSecondary} onChange={(value) => change((draft) => { draft.hero.ctaSecondary = value; })} />
+        <Field label="Marquee" value={content.hero.marquee} onChange={(value) => change((draft) => { draft.hero.marquee = value; })} />
+        <ImageField label="Hero фото" value={content.hero.image} onUpload={upload} onChange={(value) => change((draft) => { draft.hero.image = value; })} />
+      </div>;
+    }
+
+    if (section === "courses") {
+      return <div className="space-y-6">{content.courses.map((course, index) => <div key={course.id} className="space-y-4 rounded-2xl border border-black/10 p-4">
+        <p className="text-sm font-semibold">Програма {index + 1}</p>
+        <Field label="Назва" value={`${course.titleTop} ${course.titleBottom}`} onChange={(value) => change((draft) => { draft.courses[index].titleTop = value; draft.courses[index].titleBottom = ""; })} />
+        <Field label="Ціна" value={course.price} onChange={(value) => change((draft) => { draft.courses[index].price = value; })} />
+        <TextArea label="Опис" value={course.text} onChange={(value) => change((draft) => { draft.courses[index].text = value; })} />
+        <ImageField label="Зображення" value={course.image} onUpload={upload} onChange={(value) => change((draft) => { draft.courses[index].image = value; })} />
+      </div>)}</div>;
+    }
+
+    if (section === "advantages") {
+      return <div className="space-y-5">{content.advantages.map((item, index) => <div key={index} className="space-y-3 rounded-2xl border border-black/10 p-4">
+        <Field label={`Перевага ${index + 1}`} value={item.title} onChange={(value) => change((draft) => { draft.advantages[index].title = value; })} />
+        <TextArea label="Текст" value={item.text} onChange={(value) => change((draft) => { draft.advantages[index].text = value; })} />
+      </div>)}</div>;
+    }
+
+    if (section === "consultation") {
+      return <div className="space-y-4">
+        <Field label="Eyebrow" value={content.consultation.eyebrow} onChange={(value) => change((draft) => { draft.consultation.eyebrow = value; })} />
+        <Field label="Назва" value={content.consultation.title} onChange={(value) => change((draft) => { draft.consultation.title = value; })} />
+        <TextArea label="Опис" value={content.consultation.text} onChange={(value) => change((draft) => { draft.consultation.text = value; })} />
+        {content.consultation.tiers.map((tier, index) => <div key={index} className="space-y-3 rounded-2xl border border-black/10 p-4">
+          <Field label="Значення / ціна" value={tier.price} onChange={(value) => change((draft) => { draft.consultation.tiers[index].price = value; })} />
+          <Field label="Підпис" value={tier.label} onChange={(value) => change((draft) => { draft.consultation.tiers[index].label = value; })} />
+          <TextArea label="Примітка" value={tier.note} onChange={(value) => change((draft) => { draft.consultation.tiers[index].note = value; })} />
+        </div>)}
+      </div>;
+    }
+
+    if (section === "cases") {
+      return <div className="space-y-6">{content.cases.map((item, index) => <div key={index} className="space-y-3 rounded-2xl border border-black/10 p-4">
+        <Field label="Імʼя" value={item.name} onChange={(value) => change((draft) => { draft.cases[index].name = value; })} />
+        <Field label="Instagram / handle" value={item.handle} onChange={(value) => change((draft) => { draft.cases[index].handle = value; })} />
+        <TextArea label="Історія" value={item.text} onChange={(value) => change((draft) => { draft.cases[index].text = value; })} />
+        <ImageField label="Фото" value={item.image} onUpload={upload} onChange={(value) => change((draft) => { draft.cases[index].image = value; })} />
+      </div>)}</div>;
+    }
+
+    if (section === "brand") {
+      return <div className="space-y-4">
+        <Field label="Назва" value={content.brand.name} onChange={(value) => change((draft) => { draft.brand.name = value; })} />
+        <ImageField label="Логотип" value={content.brand.logo} onUpload={upload} onChange={(value) => change((draft) => { draft.brand.logo = value; })} />
+        <Field label="Телефон" value={content.brand.phone} onChange={(value) => change((draft) => { draft.brand.phone = value; })} />
+        <Field label="Посилання телефону" value={content.brand.phoneHref} onChange={(value) => change((draft) => { draft.brand.phoneHref = value; })} />
+        <Field label="Instagram" value={content.brand.instagram} onChange={(value) => change((draft) => { draft.brand.instagram = value; })} />
+        <Field label="Instagram URL" value={content.brand.instagramHref} onChange={(value) => change((draft) => { draft.brand.instagramHref = value; })} />
+        <Field label="Адреса" value={content.brand.address} onChange={(value) => change((draft) => { draft.brand.address = value; })} />
+      </div>;
+    }
+
+    return <div className="space-y-4">
+      <Field label="Eyebrow" value={content.lead.eyebrow} onChange={(value) => change((draft) => { draft.lead.eyebrow = value; })} />
+      <Field label="Заголовок" value={content.lead.title} onChange={(value) => change((draft) => { draft.lead.title = value; })} />
+      <TextArea label="Опис" value={content.lead.text} onChange={(value) => change((draft) => { draft.lead.text = value; })} />
+      <TextArea label="Варіанти програм — по одному в рядок" value={content.lead.courseOptions.join("\n")} rows={7} onChange={(value) => change((draft) => { draft.lead.courseOptions = value.split("\n").filter(Boolean); })} />
+    </div>;
+  })();
+
+  return (
+    <div className="h-screen overflow-hidden bg-neutral-100 text-neutral-900">
+      <div className="grid h-full grid-cols-[190px_minmax(0,1fr)_380px]">
+        <aside className="flex flex-col border-r border-black/10 bg-neutral-950 p-4 text-white">
+          <div className="mb-7 px-2 pt-2">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/40">GOD&apos;S FLOWERS</p>
+            <p className="mt-1 text-lg font-semibold">Mini Builder</p>
+          </div>
+          <nav className="space-y-1">
+            {sections.map((item) => <button key={item.key} onClick={() => setSection(item.key)} className={`w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${section === item.key ? "bg-white text-neutral-950" : "text-white/65 hover:bg-white/10 hover:text-white"}`}>{item.label}</button>)}
+          </nav>
+          <button onClick={logout} className="mt-auto inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-white/60 hover:bg-white/10 hover:text-white"><LogOut className="size-4" />Вийти</button>
+        </aside>
+
+        <main className="flex min-w-0 flex-col">
+          <div className="flex h-16 items-center justify-between border-b border-black/10 bg-white px-5">
+            <div className="flex items-center gap-2 text-sm text-neutral-500"><Eye className="size-4" />Live preview</div>
+            <div className="flex items-center gap-3">
+              {notice ? <span className="max-w-sm truncate text-xs text-neutral-500">{notice}</span> : null}
+              <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-neutral-950 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}Опублікувати</button>
+            </div>
+          </div>
+          <div className="min-h-0 flex-1 p-5">
+            <div className="h-full overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+              <iframe ref={iframeRef} title="Live preview" src="/?cmsPreview=1" onLoad={() => sendPreview(content)} className="h-full w-full" />
+            </div>
+          </div>
+        </main>
+
+        <aside className="min-h-0 overflow-y-auto border-l border-black/10 bg-white p-5">
+          <div className="mb-6">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-400">Редагування</p>
+            <h2 className="mt-1 text-xl font-semibold">{sections.find((item) => item.key === section)?.label}</h2>
+          </div>
+          {panel}
+        </aside>
+      </div>
+    </div>
+  );
+}

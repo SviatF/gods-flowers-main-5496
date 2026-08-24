@@ -50,7 +50,7 @@ export function Header() {
             height={879}
           />
           <span className="hidden font-display text-[15px] tracking-[0.32em] text-ink sm:block">
-            GOD&apos;S FLOWERS
+            {brand.name}
           </span>
         </a>
 
@@ -121,7 +121,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile panel */}
       <div
         className={`fixed inset-x-0 top-[72px] bottom-0 z-40 overflow-y-auto bg-cream transition-all duration-400 lg:hidden ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"

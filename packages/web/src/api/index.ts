@@ -1,5 +1,6 @@
 import type { RouterClient } from "@orpc/server";
 import { createApp } from "./__core/app";
+import { registerAdminContentRoutes } from "./admin-content";
 import { leads } from "./routes/leads";
 import { ping } from "./routes/ping";
 
@@ -19,7 +20,6 @@ export type AppRouter = typeof router;
 export type AppRouterClient = RouterClient<AppRouter>;
 
 const app = createApp(router);
-// Rare plain-HTTP endpoints (webhooks, streaming, the Better Auth handler)
-// register here with full paths, e.g. app.post("/api/webhooks/example", ...)
+registerAdminContentRoutes(app);
 
 export default app;

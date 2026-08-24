@@ -1,8 +1,6 @@
 /**
  * Увесь текстовий і медійний контент сайту.
- * Щоб замінити зображення — покладіть файл у packages/web/public/images/
- * і змініть шлях тут. Правити компоненти не потрібно.
- * Актуальна продуктова лінійка: 3 основні програми навчання.
+ * Runtime CMS може замінювати ці значення без rebuild через site-content.json.
  */
 
 export const brand = {
@@ -39,7 +37,7 @@ export const hero = {
   cta: "ОБРАТИ НАВЧАННЯ →",
   ctaSecondary: "VIP-наставництво",
   marquee: "Від першого букета · до власного квіткового бізнесу · оберіть свій рівень",
-  image: "/images/placeholder-hero.svg",
+  image: "/images/hero-original.png",
 };
 
 export const advantages = [
