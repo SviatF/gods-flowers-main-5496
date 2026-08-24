@@ -126,7 +126,7 @@ export function Header() {
       </div>
 
       <div
-        className={`fixed inset-x-0 top-[72px] bottom-0 z-40 overflow-y-auto bg-cream transition-all duration-400 lg:hidden ${
+        className={`absolute inset-x-0 top-full z-40 h-[calc(100dvh-72px)] overflow-y-auto bg-cream transition-all duration-400 md:h-[calc(100dvh-88px)] lg:hidden ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
