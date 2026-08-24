@@ -5,14 +5,16 @@ function go(href: string) {
 }
 
 export function Consultation() {
+  const [titleTop, titleAccent = ""] = consultation.title.split(/-(.+)/);
+
   return (
     <section id="consultation" className="scroll-mt-24 bg-sand py-24 md:py-36">
       <div className="container-x grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24">
         <div className="reveal flex flex-col gap-5">
           <span className="eyebrow">{consultation.eyebrow}</span>
           <h2 className="font-display text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95] text-ink">
-            VIP-
-            <span className="block italic text-taupe">наставництво</span>
+            {titleTop}{titleAccent ? "-" : ""}
+            {titleAccent ? <span className="block italic text-taupe">{titleAccent}</span> : null}
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-soft">
             {consultation.text}
