@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { brand, nav } from "../../content/site";
+import { openLeadApplication } from "./lead-modal";
 
 function scrollToId(href: string) {
   const el = document.querySelector(href);
@@ -29,7 +30,10 @@ export function Header() {
   const go = (href: string) => {
     setOpen(false);
     setOpenGroup(null);
-    window.setTimeout(() => scrollToId(href), 60);
+    window.setTimeout(() => {
+      if (href === "#lead") openLeadApplication();
+      else scrollToId(href);
+    }, 60);
   };
 
   return (
