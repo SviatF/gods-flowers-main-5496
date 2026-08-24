@@ -82,8 +82,8 @@ export function Cases() {
             <div className="overflow-hidden rounded-[16px] bg-linen">
               <img
                 src={item.image}
-                alt=""
-                className="aspect-[7/9] w-full object-cover"
+                alt={`${item.name} — відгук`}
+                className="aspect-[7/9] w-full object-contain"
               />
             </div>
             <div className="flex flex-col gap-2.5 pt-6">
