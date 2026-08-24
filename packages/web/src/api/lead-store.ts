@@ -9,7 +9,6 @@ export type LeadRecord = {
   id: string;
   name: string;
   phone: string;
-  email: string | null;
   course: string;
   comment: string | null;
   pageUrl: string | null;
@@ -22,7 +21,6 @@ export type LeadRecord = {
 export type CreateLeadInput = {
   name: string;
   phone: string;
-  email?: string;
   course: string;
   comment?: string;
   pageUrl?: string;
@@ -68,7 +66,6 @@ export async function createLead(input: CreateLeadInput) {
       id: randomUUID(),
       name: input.name,
       phone: input.phone,
-      email: input.email || null,
       course: input.course,
       comment: input.comment || null,
       pageUrl: input.pageUrl || null,
