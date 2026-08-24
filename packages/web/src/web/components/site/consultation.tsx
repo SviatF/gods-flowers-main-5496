@@ -1,8 +1,5 @@
-import { consultation } from "../../content/site";
-
-function go(href: string) {
-  document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+import { consultation, lead } from "../../content/site";
+import { openLeadApplication } from "./lead-modal";
 
 export function Consultation() {
   const [titleTop, titleAccent = ""] = consultation.title.split(/-(.+)/);
@@ -42,7 +39,7 @@ export function Consultation() {
 
           <button
             type="button"
-            onClick={() => go("#lead")}
+            onClick={() => openLeadApplication(lead.courseOptions[2])}
             className="reveal mt-10 self-start rounded-full bg-ink px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-cream transition-colors duration-300 hover:bg-taupe-deep"
           >
             Подати заявку
