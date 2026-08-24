@@ -46,6 +46,8 @@ export function LeadForm() {
         email: fields.email.trim(),
         course: fields.course,
         comment: fields.comment.trim(),
+        pageUrl: window.location.href,
+        referrer: document.referrer,
       },
       {
         onSuccess: () => {
