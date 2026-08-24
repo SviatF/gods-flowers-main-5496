@@ -1,7 +1,5 @@
 import { hero } from "../../content/site";
 
-const HERO_IMAGE = "/images/hero-original.png";
-
 function go(href: string) {
   document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -10,7 +8,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden pt-[112px] md:pt-[140px]">
       <div className="absolute inset-0 lg:hidden" aria-hidden>
-        <img src={HERO_IMAGE} alt="" className="h-full w-full object-cover object-center" />
+        <img src={hero.image} alt="" className="h-full w-full object-cover object-center" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(24,21,19,0.34)_0%,rgba(24,21,19,0.54)_48%,rgba(24,21,19,0.7)_100%)]" />
       </div>
 
@@ -66,7 +64,7 @@ export function Hero() {
         >
           <div className="overflow-hidden rounded-t-[220px] bg-linen">
             <img
-              src={HERO_IMAGE}
+              src={hero.image}
               alt=""
               className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-out hover:scale-[1.04]"
             />
