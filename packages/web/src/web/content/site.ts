@@ -44,7 +44,7 @@ export const offer = {
   titleAccent: "за 9 €",
   text: "Практичний онлайн-курс для тих, хто хоче познайомитися з професією флориста, отримати базові знання та зробити перший впевнений крок.",
   price: "9 €",
-  image: "/images/block1.png",
+  image: "/images/yuhuia.png",
   cta: "ОТРИМАТИ КУРС + ГАЙД ЗА 9 € →",
   paymentUrl: "",
   timerEnabled: true,
