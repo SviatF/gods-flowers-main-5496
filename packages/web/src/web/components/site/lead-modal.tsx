@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { offer } from "../../content/site";
 import { ApplicationForm } from "./application-form";
 
 const OPEN_EVENT = "gods-flowers:open-lead-modal";
@@ -56,34 +57,24 @@ export function LeadModal() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end bg-black/55 backdrop-blur-[2px] md:hidden" role="dialog" aria-modal="true" aria-label="Форма заявки">
-      <button
-        type="button"
-        aria-label="Закрити форму"
-        className="absolute inset-0 cursor-default"
-        onClick={() => setOpen(false)}
-      />
+    <div className="fixed inset-0 z-[120] flex items-end bg-black/55 backdrop-blur-[2px] md:hidden" role="dialog" aria-modal="true" aria-label="Оформлення курсу">
+      <button type="button" aria-label="Закрити форму" className="absolute inset-0 cursor-default" onClick={() => setOpen(false)} />
 
       <div className="relative z-10 max-h-[92svh] w-full overflow-y-auto rounded-t-[28px] bg-cream px-6 pb-[max(28px,env(safe-area-inset-bottom))] pt-5 shadow-2xl">
-        <div className="mb-5 flex items-start justify-between gap-5">
+        <div className="mb-4 flex items-start justify-between gap-5">
           <div>
-            <span className="eyebrow">Заявка на навчання</span>
+            <span className="eyebrow">Оформлення за {offer.price}</span>
             <h2 className="mt-2 font-display text-[2.1rem] leading-[0.95] text-ink">
-              Обрати <span className="italic text-taupe">програму</span>
+              Залишилось <span className="italic text-taupe">2 поля</span>
             </h2>
           </div>
-          <button
-            type="button"
-            aria-label="Закрити"
-            onClick={() => setOpen(false)}
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-taupe/35 text-ink transition-colors hover:bg-sand"
-          >
+          <button type="button" aria-label="Закрити" onClick={() => setOpen(false)} className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-taupe/35 text-ink transition-colors hover:bg-sand">
             <X className="size-5" />
           </button>
         </div>
 
-        <p className="mb-6 text-[14px] leading-relaxed text-ink-soft">
-          Залиште контакти — ми звʼяжемось із вами та допоможемо обрати формат навчання.
+        <p className="mb-5 text-[13px] leading-relaxed text-ink-soft">
+          Вкажіть імʼя та телефон — без вибору програм і довгої анкети.
         </p>
 
         <ApplicationForm key={formKey} compact initialCourse={course} />
