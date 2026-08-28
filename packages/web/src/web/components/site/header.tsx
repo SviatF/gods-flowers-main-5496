@@ -146,23 +146,6 @@ export function Header() {
               ))}
             </div>
           ))}
-          <div className="flex flex-col gap-4">
-            <span className="eyebrow">Академія</span>
-            <button
-              type="button"
-              onClick={() => go("#cases")}
-              className="text-left font-display text-3xl text-ink"
-            >
-              Кейси учениць
-            </button>
-            <button
-              type="button"
-              onClick={() => go("#consultation")}
-              className="text-left font-display text-3xl text-ink"
-            >
-              Консультація
-            </button>
-          </div>
           <button
             type="button"
             onClick={() => go("#lead")}
