@@ -48,13 +48,15 @@ export function Hero() {
             >
               {hero.cta}
             </button>
-            <button
-              type="button"
-              onClick={() => go("#consultation")}
-              className="rounded-full border border-cream/70 px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-cream transition-colors duration-300 hover:bg-white/10 lg:border-taupe lg:text-taupe-deep lg:hover:bg-sand"
-            >
-              {hero.ctaSecondary}
-            </button>
+            {hero.ctaSecondary ? (
+              <button
+                type="button"
+                onClick={() => go("#cases")}
+                className="rounded-full border border-cream/70 px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-cream transition-colors duration-300 hover:bg-white/10 lg:border-taupe lg:text-taupe-deep lg:hover:bg-sand"
+              >
+                {hero.ctaSecondary}
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -70,9 +72,9 @@ export function Hero() {
             />
           </div>
           <div className="absolute -left-4 bottom-8 hidden rounded-full bg-cream px-6 py-4 shadow-[0_20px_60px_-40px_rgba(51,51,51,0.8)] md:block">
-            <span className="font-display text-3xl text-terracotta">3</span>
+            <span className="font-display text-3xl text-terracotta">9 €</span>
             <span className="ml-3 text-[11px] uppercase tracking-[0.18em] text-ink-soft">
-              формати навчання
+              стартовий курс
             </span>
           </div>
         </div>
