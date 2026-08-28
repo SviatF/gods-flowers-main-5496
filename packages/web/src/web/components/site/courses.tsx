@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Gift } from "lucide-react";
+import { ArrowRight, Check, Gift } from "lucide-react";
 import { offer } from "../../content/site";
 import { openLeadApplication } from "./lead-modal";
 
@@ -26,14 +26,20 @@ export function Courses() {
   const [remaining, setRemaining] = useState(() => getRemaining(offer.deadline));
 
   useEffect(() => {
-    if (!offer.timerEnabled) return;
+    if (!offer.timerEnabled) {
+      setRemaining(0);
+      return;
+    }
+
     const update = () => setRemaining(getRemaining(offer.deadline));
     update();
     const id = window.setInterval(update, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [offer.deadline, offer.timerEnabled]);
 
   const time = useMemo(() => splitTime(remaining), [remaining]);
+  const timerActive = offer.timerEnabled && remaining > 0;
+  const bonusActive = offer.bonusEnabled && (!offer.timerEnabled || remaining > 0);
 
   const buy = () => {
     const url = offer.paymentUrl.trim();
@@ -41,7 +47,7 @@ export function Courses() {
       window.location.href = url;
       return;
     }
-    openLeadApplication(`Флористика з нуля — ${offer.price}`);
+    openLeadApplication(`Правильний догляд за квітами — ${offer.price}`);
   };
 
   return (
@@ -68,8 +74,22 @@ export function Courses() {
               <span className="mb-2 text-[11px] uppercase tracking-[0.18em] text-taupe-deep">онлайн-доступ</span>
             </div>
 
-            {offer.bonusEnabled ? (
-              <div className="mt-8 rounded-[18px] border border-terracotta/20 bg-sand/70 p-5 md:p-6">
+            <div className="mt-7 border-y border-linen py-6">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-taupe-deep">{offer.learnTitle}</p>
+              <div className="mt-4 grid gap-3">
+                {offer.learnItems.map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-taupe/15 text-taupe-deep">
+                      <Check className="size-3.5" strokeWidth={2} />
+                    </span>
+                    <p className="text-[13px] leading-relaxed text-ink-soft">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {bonusActive ? (
+              <div className="mt-7 rounded-[18px] border border-terracotta/20 bg-sand/70 p-5 md:p-6">
                 <div className="flex items-start gap-4">
                   <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-terracotta text-cream">
                     <Gift className="size-5" />
@@ -83,7 +103,7 @@ export function Courses() {
               </div>
             ) : null}
 
-            {offer.timerEnabled ? (
+            {timerActive ? (
               <div className="mt-7">
                 <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-taupe-deep">{offer.timerLabel}</p>
                 <div className="grid grid-cols-4 gap-2">
@@ -111,8 +131,12 @@ export function Courses() {
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </button>
 
+            {bonusActive && offer.ctaNote ? (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-terracotta">{offer.ctaNote}</p>
+            ) : null}
+
             {!offer.paymentUrl.trim() ? (
-              <p className="mt-3 text-center text-[10px] leading-relaxed text-taupe-deep">
+              <p className="mt-2 text-center text-[10px] leading-relaxed text-taupe-deep">
                 Посилання на оплату ще не задане — кнопка відкриває форму заявки.
               </p>
             ) : null}
