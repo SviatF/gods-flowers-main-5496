@@ -33,6 +33,7 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const createLead = useCreateLead();
+  const hasMultipleCourses = lead.courseOptions.length > 1;
 
   useEffect(() => {
     if (!initialCourse) return;
@@ -64,7 +65,7 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
       {
         name: fields.name.trim(),
         phone: fields.phone.trim(),
-        course: fields.course,
+        course: fields.course || lead.courseOptions[0] || "Курс флористики — 9 €",
         comment: fields.comment.trim(),
         pageUrl: window.location.href,
         referrer: document.referrer,
@@ -127,20 +128,22 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
           />
         </label>
 
-        <label className={`flex flex-col gap-2 ${compact ? "" : "sm:col-span-2"}`}>
-          <span className="eyebrow">Програма</span>
-          <select
-            className={`${inputClass} cursor-pointer`}
-            value={fields.course}
-            onChange={(e) => set("course")(e.target.value)}
-          >
-            {lead.courseOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+        {hasMultipleCourses ? (
+          <label className={`flex flex-col gap-2 ${compact ? "" : "sm:col-span-2"}`}>
+            <span className="eyebrow">Програма</span>
+            <select
+              className={`${inputClass} cursor-pointer`}
+              value={fields.course}
+              onChange={(e) => set("course")(e.target.value)}
+            >
+              {lead.courseOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <label className="flex flex-col gap-2">
