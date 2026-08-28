@@ -28,10 +28,18 @@ export function Header() {
   const go = (href: string) => {
     setOpen(false);
     setOpenGroup(null);
-    window.setTimeout(() => {
-      if (href === "#lead") openLeadApplication(`Правильний догляд за квітами — ${offer.price}`);
-      else scrollToId(href);
-    }, 60);
+    window.setTimeout(() => scrollToId(href), 60);
+  };
+
+  const buy = () => {
+    setOpen(false);
+    setOpenGroup(null);
+    const url = offer.paymentUrl.trim();
+    if (url) {
+      window.location.href = url;
+      return;
+    }
+    window.setTimeout(() => openLeadApplication(`Правильний догляд за квітами — ${offer.price}`), 60);
   };
 
   return (
@@ -57,7 +65,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => go("#lead")} className="hidden rounded-full bg-taupe px-6 py-3 text-[11px] uppercase tracking-[0.18em] text-cream transition-colors duration-300 hover:bg-taupe-deep md:inline-flex">Отримати за {offer.price}</button>
+          <button type="button" onClick={buy} className="hidden rounded-full bg-taupe px-6 py-3 text-[11px] uppercase tracking-[0.18em] text-cream transition-colors duration-300 hover:bg-taupe-deep md:inline-flex">Отримати за {offer.price}</button>
           <button type="button" aria-label="Меню" onClick={() => setOpen((v) => !v)} className="inline-flex size-11 items-center justify-center rounded-full border border-linen text-ink transition-colors hover:bg-sand lg:hidden">{open ? <X className="size-5" /> : <Menu className="size-5" />}</button>
         </div>
       </div>
@@ -66,7 +74,7 @@ export function Header() {
         <div className="container-x flex flex-col gap-9 py-9">
           {nav.map((group) => <div key={group.label} className="flex flex-col gap-4"><span className="eyebrow">{group.label}</span>{group.items.map((item) => <button key={item.label} type="button" onClick={() => go(item.href)} className="text-left font-display text-3xl text-ink">{item.label}</button>)}</div>)}
           <div className="flex flex-col gap-4"><span className="eyebrow">Довіра</span><button type="button" onClick={() => go("#cases")} className="text-left font-display text-3xl text-ink">Історії учениць</button></div>
-          <button type="button" onClick={() => go("#lead")} className="rounded-full bg-taupe px-6 py-4 text-[12px] uppercase tracking-[0.18em] text-cream">Отримати курс за {offer.price}</button>
+          <button type="button" onClick={buy} className="rounded-full bg-taupe px-6 py-4 text-[12px] uppercase tracking-[0.18em] text-cream">Отримати курс за {offer.price}</button>
           <a href={brand.phoneHref} className="font-display text-2xl text-taupe-deep">{brand.phone}</a>
         </div>
       </div>
