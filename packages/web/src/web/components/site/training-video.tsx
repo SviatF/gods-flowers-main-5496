@@ -57,7 +57,7 @@ export function TrainingVideo() {
             Подивись, як знання переходять <span className="italic text-taupe">у практику</span>
           </h2>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-ink-soft md:text-base">
-            Власниця академії показує учениці роботу з квітами наживо: пояснює техніку, звертає увагу на деталі та допомагає одразу відпрацювати правильні дії.
+            Побачте, як проходить навчання на практиці: робота з живими квітами, професійні прийоми та пояснення, які допомагають краще відчувати композицію, форму й техніку.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
