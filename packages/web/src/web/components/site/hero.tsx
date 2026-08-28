@@ -44,7 +44,7 @@ export function Hero() {
             <img src={hero.image} alt="" className="aspect-[4/5] w-full object-cover transition-transform duration-[900ms] ease-out hover:scale-[1.04]" />
           </div>
           <div className="absolute -left-4 bottom-8 hidden rounded-full bg-cream px-6 py-4 shadow-[0_20px_60px_-40px_rgba(51,51,51,0.8)] md:block">
-            <span className="font-display text-3xl text-terracotta">9 €</span>
+            <span className="font-display text-3xl text-terracotta">469 ₴</span>
             <span className="ml-3 text-[11px] uppercase tracking-[0.18em] text-ink-soft">старт у флористиці</span>
           </div>
         </div>
