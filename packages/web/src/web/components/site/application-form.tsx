@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { lead } from "../../content/site";
+import { lead, offer } from "../../content/site";
 import { useCreateLead } from "../../queries/leads";
 
 type Fields = {
   name: string;
   phone: string;
   course: string;
-  comment: string;
 };
 
 type ApplicationFormProps = {
@@ -24,7 +23,6 @@ function createEmpty(initialCourse?: string): Fields {
     name: "",
     phone: "",
     course: initialCourse || lead.courseOptions[0] || "",
-    comment: "",
   };
 }
 
@@ -39,18 +37,7 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
     setFields((current) => ({ ...current, course: initialCourse }));
   }, [initialCourse]);
 
-  useEffect(() => {
-    if (compact) return;
-    const onCourse = (event: Event) => {
-      const custom = event as CustomEvent<{ course?: string }>;
-      if (!custom.detail?.course) return;
-      setFields((current) => ({ ...current, course: custom.detail.course! }));
-    };
-    window.addEventListener("gods-flowers:select-lead-course", onCourse);
-    return () => window.removeEventListener("gods-flowers:select-lead-course", onCourse);
-  }, [compact]);
-
-  const set = (key: keyof Fields) => (value: string) =>
+  const set = (key: "name" | "phone") => (value: string) =>
     setFields((prev) => ({ ...prev, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
@@ -64,8 +51,8 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
       {
         name: fields.name.trim(),
         phone: fields.phone.trim(),
-        course: fields.course,
-        comment: fields.comment.trim(),
+        course: fields.course || lead.courseOptions[0] || `Правильний догляд за квітами — ${offer.price}`,
+        comment: "",
         pageUrl: window.location.href,
         referrer: document.referrer,
       },
@@ -86,24 +73,17 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
         <span className="inline-flex size-14 items-center justify-center rounded-full bg-taupe text-cream">
           <Check className="size-6" />
         </span>
-        <h3 className="font-display text-3xl italic text-ink">Дякуємо!</h3>
+        <h3 className="font-display text-3xl italic text-ink">Готово!</h3>
         <p className="max-w-sm text-[15px] leading-relaxed text-ink-soft">
-          Заявку прийнято. Ми звʼяжемось із вами найближчим часом.
+          Контакти отримали. Ми допоможемо завершити оформлення курсу.
         </p>
-        <button
-          type="button"
-          onClick={() => setDone(false)}
-          className="text-[11px] uppercase tracking-[0.18em] text-taupe-deep underline underline-offset-4"
-        >
-          Надіслати ще одну
-        </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className={`flex flex-col ${compact ? "gap-6" : "gap-8"}`} noValidate>
-      <div className={`grid ${compact ? "gap-6" : "gap-8 sm:grid-cols-2"}`}>
+    <form onSubmit={submit} className={`flex flex-col ${compact ? "gap-5" : "gap-7"}`} noValidate>
+      <div className={`grid ${compact ? "gap-5" : "gap-7 sm:grid-cols-2"}`}>
         <label className="flex flex-col gap-2">
           <span className="eyebrow">Імʼя *</span>
           <input
@@ -126,33 +106,7 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
             autoComplete="tel"
           />
         </label>
-
-        <label className={`flex flex-col gap-2 ${compact ? "" : "sm:col-span-2"}`}>
-          <span className="eyebrow">Програма</span>
-          <select
-            className={`${inputClass} cursor-pointer`}
-            value={fields.course}
-            onChange={(e) => set("course")(e.target.value)}
-          >
-            {lead.courseOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
-
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Коментар</span>
-        <textarea
-          className={`${inputClass} resize-none`}
-          rows={compact ? 2 : 3}
-          value={fields.comment}
-          onChange={(e) => set("comment")(e.target.value)}
-          placeholder="Ваш досвід у флористиці або питання"
-        />
-      </label>
 
       {error ? <p className="text-[13px] text-terracotta">{error}</p> : null}
 
@@ -167,12 +121,12 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
             Надсилаємо
           </>
         ) : (
-          "Надіслати заявку"
+          `Отримати курс за ${offer.price}`
         )}
       </button>
 
-      <p className="text-[11px] leading-relaxed text-taupe-deep">
-        Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
+      <p className="text-[10px] leading-relaxed text-taupe-deep">
+        Лише 2 поля. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
       </p>
     </form>
   );
