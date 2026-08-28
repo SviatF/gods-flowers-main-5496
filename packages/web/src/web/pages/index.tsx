@@ -5,7 +5,6 @@ import { Hero } from "../components/site/hero";
 import { Advantages } from "../components/site/advantages";
 import { Courses } from "../components/site/courses";
 import { Cases } from "../components/site/cases";
-import { Consultation } from "../components/site/consultation";
 import { LeadForm } from "../components/site/lead-form";
 import { LeadModal } from "../components/site/lead-modal";
 import { Footer } from "../components/site/footer";
@@ -22,7 +21,6 @@ function Index() {
         <Advantages />
         <Courses />
         <Cases />
-        <Consultation />
         <LeadForm />
       </main>
       <Footer />
