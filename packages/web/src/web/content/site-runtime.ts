@@ -7,6 +7,7 @@ import {
   hero,
   lead,
   nav,
+  offer,
 } from "./site";
 
 export type SiteContent = {
@@ -15,6 +16,7 @@ export type SiteContent = {
   hero: typeof hero;
   advantages: typeof advantages;
   courses: typeof courses;
+  offer: typeof offer;
   cases: typeof cases;
   consultation: typeof consultation;
   lead: typeof lead;
@@ -27,6 +29,7 @@ export function getSiteContentSnapshot(): SiteContent {
     hero,
     advantages,
     courses,
+    offer,
     cases,
     consultation,
     lead,
@@ -36,6 +39,7 @@ export function getSiteContentSnapshot(): SiteContent {
 export function applySiteContent(next: SiteContent) {
   Object.assign(brand, next.brand);
   Object.assign(hero, next.hero);
+  Object.assign(offer, next.offer);
   Object.assign(consultation, next.consultation);
   Object.assign(lead, next.lead);
 
