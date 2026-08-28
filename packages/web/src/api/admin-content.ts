@@ -131,7 +131,7 @@ export function registerAdminContentRoutes(app: Hono) {
       return c.json({ error: "Invalid content payload" }, 400);
     }
 
-    const required = ["brand", "nav", "hero", "advantages", "courses", "cases", "consultation", "lead"];
+    const required = ["brand", "nav", "hero", "advantages", "courses", "offer", "cases", "consultation", "lead"];
     if (required.some((key) => !(key in content))) {
       return c.json({ error: "Content payload is incomplete" }, 400);
     }
