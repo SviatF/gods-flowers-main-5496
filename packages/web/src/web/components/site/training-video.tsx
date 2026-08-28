@@ -61,7 +61,7 @@ export function TrainingVideo() {
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            {["Робота наживо", "Пояснення техніки", "Практичний підхід"].map((item) => (
+            {["Догляд вдома", "Пояснення техніки", "Практичний підхід"].map((item) => (
               <div key={item} className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.14em] text-taupe-deep">
                 <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-sand text-taupe-deep">
                   <Check className="size-3.5" strokeWidth={2} />
