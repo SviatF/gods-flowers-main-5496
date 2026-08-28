@@ -4,6 +4,7 @@ import { Header } from "../components/site/header";
 import { Hero } from "../components/site/hero";
 import { ConversionStrip } from "../components/site/conversion-strip";
 import { Courses } from "../components/site/courses";
+import { TrainingVideo } from "../components/site/training-video";
 import { Advantages } from "../components/site/advantages";
 import { Cases } from "../components/site/cases";
 import { Faq } from "../components/site/faq";
@@ -23,6 +24,7 @@ function Index() {
         <Hero />
         <ConversionStrip />
         <Courses />
+        <TrainingVideo />
         <Advantages />
         <Cases />
         <Faq />
