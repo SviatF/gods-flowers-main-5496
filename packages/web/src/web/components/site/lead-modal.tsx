@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { lead } from "../../content/site";
 import { ApplicationForm } from "./application-form";
 
 const OPEN_EVENT = "gods-flowers:open-lead-modal";
@@ -67,9 +68,9 @@ export function LeadModal() {
       <div className="relative z-10 max-h-[92svh] w-full overflow-y-auto rounded-t-[28px] bg-cream px-6 pb-[max(28px,env(safe-area-inset-bottom))] pt-5 shadow-2xl">
         <div className="mb-5 flex items-start justify-between gap-5">
           <div>
-            <span className="eyebrow">Заявка на навчання</span>
+            <span className="eyebrow">Курс флористики · 9 €</span>
             <h2 className="mt-2 font-display text-[2.1rem] leading-[0.95] text-ink">
-              Обрати <span className="italic text-taupe">програму</span>
+              Отримати <span className="italic text-taupe">курс</span>
             </h2>
           </div>
           <button
@@ -83,10 +84,10 @@ export function LeadModal() {
         </div>
 
         <p className="mb-6 text-[14px] leading-relaxed text-ink-soft">
-          Залиште контакти — ми звʼяжемось із вами та допоможемо обрати формат навчання.
+          {lead.text}
         </p>
 
-        <ApplicationForm key={formKey} compact initialCourse={course} />
+        <ApplicationForm key={formKey} compact initialCourse={course || lead.courseOptions[0]} />
       </div>
     </div>
   );
