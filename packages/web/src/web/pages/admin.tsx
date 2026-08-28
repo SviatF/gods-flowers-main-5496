@@ -3,16 +3,14 @@ import { Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
 import { AdminLeads } from "../components/admin-leads";
 import { getSiteContentSnapshot, type SiteContent } from "../content/site-runtime";
 
-type SectionKey = "submissions" | "hero" | "courses" | "advantages" | "consultation" | "cases" | "brand" | "lead";
-
+type SectionKey = "submissions" | "offer" | "hero" | "advantages" | "cases" | "brand" | "lead";
 type Status = "checking" | "login" | "ready";
 
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "submissions", label: "Заявки" },
+  { key: "offer", label: "Офер / Продаж" },
   { key: "hero", label: "Hero" },
-  { key: "courses", label: "Програми" },
   { key: "advantages", label: "Переваги" },
-  { key: "consultation", label: "VIP" },
   { key: "cases", label: "Кейси" },
   { key: "brand", label: "Контакти" },
   { key: "lead", label: "Форма" },
@@ -21,11 +19,11 @@ const sections: Array<{ key: SectionKey; label: string }> = [
 const inputClass = "w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-500";
 const labelClass = "mb-1.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-500";
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <label className="block">
       <span className={labelClass}>{label}</span>
-      <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input className={inputClass} value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
@@ -36,6 +34,21 @@ function TextArea({ label, value, onChange, rows = 4 }: { label: string; value: 
       <span className={labelClass}>{label}</span>
       <textarea className={`${inputClass} resize-y`} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between gap-4 rounded-xl border border-black/10 bg-white px-4 py-3 text-left"
+    >
+      <span className="text-sm font-medium text-neutral-800">{label}</span>
+      <span className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-neutral-950" : "bg-neutral-200"}`}>
+        <span className={`absolute top-1 size-4 rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
+      </span>
+    </button>
   );
 }
 
@@ -55,9 +68,11 @@ function ImageField({
   return (
     <div>
       <span className={labelClass}>{label}</span>
-      <div className="mb-2 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
-        <img src={value} alt="" className="aspect-[16/9] w-full object-cover" />
-      </div>
+      {value ? (
+        <div className="mb-2 overflow-hidden rounded-xl border border-black/10 bg-neutral-100">
+          <img src={value} alt="" className="aspect-[16/9] w-full object-cover" />
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} />
         <label className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-xl bg-neutral-900 px-4 text-white transition hover:bg-neutral-700">
@@ -239,6 +254,49 @@ export default function AdminPage() {
   const panel = (() => {
     if (section === "submissions") return null;
 
+    if (section === "offer") {
+      const course = content.courses[0];
+      if (!course) return <p className="text-sm text-red-600">У контенті немає курсу.</p>;
+
+      return <div className="space-y-6">
+        <div className="space-y-4 rounded-2xl border border-black/10 p-4">
+          <p className="text-sm font-semibold">Курс</p>
+          <Field label="Назва — рядок 1" value={course.titleTop} onChange={(value) => change((draft) => { draft.courses[0].titleTop = value; })} />
+          <Field label="Назва — рядок 2" value={course.titleBottom} onChange={(value) => change((draft) => { draft.courses[0].titleBottom = value; })} />
+          <Field label="Ціна" value={course.price} onChange={(value) => change((draft) => { draft.courses[0].price = value; })} />
+          <Field label="Короткий meta-текст" value={course.meta} onChange={(value) => change((draft) => { draft.courses[0].meta = value; })} />
+          <TextArea label="Опис курсу" value={course.text} onChange={(value) => change((draft) => { draft.courses[0].text = value; })} />
+          <ImageField label="Фото курсу" value={course.image} onUpload={upload} onChange={(value) => change((draft) => { draft.courses[0].image = value; })} />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-black/10 p-4">
+          <p className="text-sm font-semibold">Продажний офер</p>
+          <Field label="Eyebrow" value={content.offer.eyebrow} onChange={(value) => change((draft) => { draft.offer.eyebrow = value; })} />
+          <Field label="Основний заголовок" value={content.offer.title} onChange={(value) => change((draft) => { draft.offer.title = value; })} />
+          <TextArea label="Підзаголовок" value={content.offer.subtitle} onChange={(value) => change((draft) => { draft.offer.subtitle = value; })} />
+          <Field label="CTA кнопки" value={content.offer.cta} onChange={(value) => change((draft) => { draft.offer.cta = value; })} />
+          <Field label="Payment URL" value={content.offer.paymentHref} placeholder="https://..." onChange={(value) => change((draft) => { draft.offer.paymentHref = value; })} />
+          <TextArea label="Примітка під кнопкою" value={content.offer.note} rows={2} onChange={(value) => change((draft) => { draft.offer.note = value; })} />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-black/10 p-4">
+          <p className="text-sm font-semibold">Бонус</p>
+          <Toggle label="Показувати бонус" checked={content.offer.bonusEnabled} onChange={(value) => change((draft) => { draft.offer.bonusEnabled = value; })} />
+          <Field label="Підпис бонусу" value={content.offer.bonusEyebrow} onChange={(value) => change((draft) => { draft.offer.bonusEyebrow = value; })} />
+          <Field label="Назва бонусу" value={content.offer.bonusTitle} onChange={(value) => change((draft) => { draft.offer.bonusTitle = value; })} />
+          <TextArea label="Опис бонусу" value={content.offer.bonusText} onChange={(value) => change((draft) => { draft.offer.bonusText = value; })} />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-black/10 p-4">
+          <p className="text-sm font-semibold">Таймер</p>
+          <Toggle label="Показувати таймер" checked={content.offer.timerEnabled} onChange={(value) => change((draft) => { draft.offer.timerEnabled = value; })} />
+          <Field label="Підпис таймера" value={content.offer.timerLabel} onChange={(value) => change((draft) => { draft.offer.timerLabel = value; })} />
+          <Field label="Дедлайн (ISO + timezone)" value={content.offer.deadline} placeholder="2026-08-31T23:59:00+03:00" onChange={(value) => change((draft) => { draft.offer.deadline = value; })} />
+          <p className="text-xs leading-relaxed text-neutral-400">Таймер рахує до реальної дати. Після дедлайну на сайті зʼявиться повідомлення, що бонусна пропозиція завершилась.</p>
+        </div>
+      </div>;
+    }
+
     if (section === "hero") {
       return <div className="space-y-4">
         <Field label="Eyebrow" value={content.hero.eyebrow} onChange={(value) => change((draft) => { draft.hero.eyebrow = value; })} />
@@ -246,20 +304,10 @@ export default function AdminPage() {
         <Field label="Заголовок — рядок 2" value={content.hero.titleAccent} onChange={(value) => change((draft) => { draft.hero.titleAccent = value; })} />
         <TextArea label="Опис" value={content.hero.lead} onChange={(value) => change((draft) => { draft.hero.lead = value; })} />
         <Field label="Основна кнопка" value={content.hero.cta} onChange={(value) => change((draft) => { draft.hero.cta = value; })} />
-        <Field label="Друга кнопка" value={content.hero.ctaSecondary} onChange={(value) => change((draft) => { draft.hero.ctaSecondary = value; })} />
+        <Field label="Друга кнопка (порожньо = прихована)" value={content.hero.ctaSecondary} onChange={(value) => change((draft) => { draft.hero.ctaSecondary = value; })} />
         <Field label="Marquee" value={content.hero.marquee} onChange={(value) => change((draft) => { draft.hero.marquee = value; })} />
         <ImageField label="Hero фото" value={content.hero.image} onUpload={upload} onChange={(value) => change((draft) => { draft.hero.image = value; })} />
       </div>;
-    }
-
-    if (section === "courses") {
-      return <div className="space-y-6">{content.courses.map((course, index) => <div key={course.id} className="space-y-4 rounded-2xl border border-black/10 p-4">
-        <p className="text-sm font-semibold">Програма {index + 1}</p>
-        <Field label="Назва" value={`${course.titleTop} ${course.titleBottom}`} onChange={(value) => change((draft) => { draft.courses[index].titleTop = value; draft.courses[index].titleBottom = ""; })} />
-        <Field label="Ціна" value={course.price} onChange={(value) => change((draft) => { draft.courses[index].price = value; })} />
-        <TextArea label="Опис" value={course.text} onChange={(value) => change((draft) => { draft.courses[index].text = value; })} />
-        <ImageField label="Зображення" value={course.image} onUpload={upload} onChange={(value) => change((draft) => { draft.courses[index].image = value; })} />
-      </div>)}</div>;
     }
 
     if (section === "advantages") {
@@ -267,19 +315,6 @@ export default function AdminPage() {
         <Field label={`Перевага ${index + 1}`} value={item.title} onChange={(value) => change((draft) => { draft.advantages[index].title = value; })} />
         <TextArea label="Текст" value={item.text} onChange={(value) => change((draft) => { draft.advantages[index].text = value; })} />
       </div>)}</div>;
-    }
-
-    if (section === "consultation") {
-      return <div className="space-y-4">
-        <Field label="Eyebrow" value={content.consultation.eyebrow} onChange={(value) => change((draft) => { draft.consultation.eyebrow = value; })} />
-        <Field label="Назва" value={content.consultation.title} onChange={(value) => change((draft) => { draft.consultation.title = value; })} />
-        <TextArea label="Опис" value={content.consultation.text} onChange={(value) => change((draft) => { draft.consultation.text = value; })} />
-        {content.consultation.tiers.map((tier, index) => <div key={index} className="space-y-3 rounded-2xl border border-black/10 p-4">
-          <Field label="Значення / ціна" value={tier.price} onChange={(value) => change((draft) => { draft.consultation.tiers[index].price = value; })} />
-          <Field label="Підпис" value={tier.label} onChange={(value) => change((draft) => { draft.consultation.tiers[index].label = value; })} />
-          <TextArea label="Примітка" value={tier.note} onChange={(value) => change((draft) => { draft.consultation.tiers[index].note = value; })} />
-        </div>)}
-      </div>;
     }
 
     if (section === "cases") {
@@ -307,7 +342,7 @@ export default function AdminPage() {
       <Field label="Eyebrow" value={content.lead.eyebrow} onChange={(value) => change((draft) => { draft.lead.eyebrow = value; })} />
       <Field label="Заголовок" value={content.lead.title} onChange={(value) => change((draft) => { draft.lead.title = value; })} />
       <TextArea label="Опис" value={content.lead.text} onChange={(value) => change((draft) => { draft.lead.text = value; })} />
-      <TextArea label="Варіанти програм — по одному в рядок" value={content.lead.courseOptions.join("\n")} rows={7} onChange={(value) => change((draft) => { draft.lead.courseOptions = value.split("\n").filter(Boolean); })} />
+      <TextArea label="Назва продукту в заявці" value={content.lead.courseOptions.join("\n")} rows={3} onChange={(value) => change((draft) => { draft.lead.courseOptions = value.split("\n").filter(Boolean); })} />
     </div>;
   })();
 
