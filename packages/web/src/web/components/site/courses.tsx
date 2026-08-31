@@ -82,7 +82,7 @@ export function Courses() {
           <div className="flex flex-col justify-center p-6 md:p-9 lg:p-5 xl:p-6">
             <div className="flex items-end justify-between gap-4">
               <div className="flex items-end gap-3">
-                <span className="font-display text-[clamp(4rem,8vw,6rem)] leading-none text-terracotta lg:text-[4rem] xl:text-[4.3rem]">{offer.price}</span>
+                <span className="font-sans text-[clamp(3.6rem,7vw,5.4rem)] font-normal leading-none tracking-[-0.045em] text-terracotta tabular-nums lg:text-[3.7rem] xl:text-[4rem]">{offer.price}</span>
                 <span className="mb-2 text-[10px] uppercase tracking-[0.16em] text-taupe-deep lg:text-[9px]">онлайн-доступ</span>
               </div>
               <span className="hidden items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-taupe-deep sm:inline-flex lg:text-[9px]">
