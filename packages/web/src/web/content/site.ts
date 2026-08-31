@@ -57,7 +57,7 @@ export const offer = {
   titleAccent: "свіжими довше",
   text: "Прості правила професійного догляду, які допоможуть квітам довше зберігати свіжість, форму та красивий вигляд.",
   price: "469 ₴",
-  image: "/images/yuhuia.png",
+  image: "/main-photo2.webp",
   cta: "ОТРИМАТИ КУРС ЗА 469 ₴ →",
   ctaNote: "+ бонусна шпаргалка у подарунок",
   paymentUrl: "",
