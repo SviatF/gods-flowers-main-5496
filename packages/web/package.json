@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
-    "start": "tsx src/__server-node.ts",
+    "start": "node --env-file=.env --import tsx src/__server-node.ts",
     "start:bun": "bun src/__server.ts",
     "typecheck": "tsc --noEmit",
     "lint": "cd ../.. && oxlint packages/web --deny-warnings --no-error-on-unmatched-pattern",
