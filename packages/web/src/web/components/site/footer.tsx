@@ -39,7 +39,7 @@ export function Footer() {
 
         <div className="flex flex-col gap-3 border-t border-linen pt-8 text-[11px] uppercase tracking-[0.16em] text-taupe-deep sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} {brand.name}</span>
-          <span>Публічна оферта · Політика конфіденційності</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">\n            <span>Публічна оферта</span>\n            <span aria-hidden>·</span>\n            <a href="/policy" className="transition-colors hover:text-ink">Політика конфіденційності</a>\n          </div>
         </div>
       </div>
     </footer>
