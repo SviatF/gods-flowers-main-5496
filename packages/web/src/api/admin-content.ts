@@ -24,8 +24,8 @@ function secret() {
   return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || "";
 }
 
-function passwordConfigured() {
-  return Boolean(process.env.ADMIN_PASSWORD && secret());
+function credentialsConfigured() {
+  return Boolean(process.env.ADMIN_LOGIN && process.env.ADMIN_PASSWORD && secret());
 }
 
 function safeEqual(a: string, b: string) {
@@ -45,7 +45,7 @@ function createSession() {
 }
 
 function validSession(token?: string) {
-  if (!token || !passwordConfigured()) return false;
+  if (!token || !credentialsConfigured()) return false;
   const [expires, signature] = token.split(".");
   if (!expires || !signature || Number(expires) < Date.now()) return false;
   return safeEqual(signature, sign(expires));
@@ -89,7 +89,7 @@ export function registerAdminContentRoutes(app: Hono) {
   });
 
   app.get("/api/admin/session", (c) => {
-    if (!passwordConfigured()) {
+    if (!credentialsConfigured()) {
       return c.json({ authenticated: false, configured: false }, 503);
     }
     return c.json({
@@ -99,7 +99,7 @@ export function registerAdminContentRoutes(app: Hono) {
   });
 
   app.post("/api/admin/login", async (c) => {
-    if (!passwordConfigured()) {
+    if (!credentialsConfigured()) {
       return c.json({ error: "ADMIN_PASSWORD is not configured" }, 503);
     }
 
