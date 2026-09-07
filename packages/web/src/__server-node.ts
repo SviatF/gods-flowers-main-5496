@@ -1,6 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { chmod, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { serve } from "@hono/node-server";
+import { createAdaptorServer } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import app from "./api";
 
@@ -20,16 +20,21 @@ app.get("*", async (c) => {
   }
 });
 
-const port = Number(process.env.PORT ?? 3000);
-const hostname = process.env.HOST || "127.0.0.1";
+const listenTarget = process.env.PORT || "3000";
+const server = createAdaptorServer({ fetch: app.fetch });
 
-serve(
-  {
-    fetch: app.fetch,
-    port,
-    hostname,
-  },
-  (info) => {
-    console.log(`Web server listening on http://${info.address}:${info.port}`);
-  },
-);
+if (/^\d+$/.test(listenTarget)) {
+  const port = Number(listenTarget);
+  const hostname = process.env.HOST || "127.0.0.1";
+
+  server.listen(port, hostname, () => {
+    console.log(`Web server listening on http://${hostname}:${port}`);
+  });
+} else {
+  await rm(listenTarget, { force: true });
+
+  server.listen(listenTarget, async () => {
+    await chmod(listenTarget, 0o777);
+    console.log(`Web server listening on socket ${listenTarget}`);
+  });
+}
