@@ -149,7 +149,8 @@ function fileToDataUrl(file: File) {
 export default function AdminPage() {
   const [status, setStatus] = useState<Status>("checking");
   const [previewOnly, setPreviewOnly] = useState(false);
-  const [loginName, setLoginName] = useState("");\n  const [password, setPassword] = useState("");
+  const [loginName, setLoginName] = useState("");
+  const [password, setPassword] = useState("");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [section, setSection] = useState<SectionKey>("submissions");
   const [saving, setSaving] = useState(false);
@@ -211,6 +212,7 @@ export default function AdminPage() {
       return;
     }
     await loadContent();
+    setLoginName("");
     setPassword("");
     setPreviewOnly(false);
     setStatus("ready");
@@ -336,10 +338,12 @@ export default function AdminPage() {
           <Field label="Заголовок блоку знань" value={content.offer.learnTitle} onChange={(value) => change((draft) => { draft.offer.learnTitle = value; })} />
           <TextArea
             label="Що людина дізнається — по одному в рядок"
-            value={content.offer.learnItems.join("\n")}
+            value={content.offer.learnItems.join("
+")}
             rows={8}
             onChange={(value) => change((draft) => {
-              draft.offer.learnItems = value.split("\n").map((item) => item.trim()).filter(Boolean);
+              draft.offer.learnItems = value.split("
+").map((item) => item.trim()).filter(Boolean);
             })}
           />
           <Field label="CTA" value={content.offer.cta} onChange={(value) => change((draft) => { draft.offer.cta = value; })} />
@@ -404,10 +408,12 @@ export default function AdminPage() {
         <TextArea label="Опис" value={content.lead.text} onChange={(value) => change((draft) => { draft.lead.text = value; })} />
         <TextArea
           label="Варіанти — по одному в рядок"
-          value={content.lead.courseOptions.join("\n")}
+          value={content.lead.courseOptions.join("
+")}
           rows={5}
           onChange={(value) => change((draft) => {
-            draft.lead.courseOptions = value.split("\n").filter(Boolean);
+            draft.lead.courseOptions = value.split("
+").filter(Boolean);
           })}
         />
       </div>
