@@ -338,12 +338,10 @@ export default function AdminPage() {
           <Field label="Заголовок блоку знань" value={content.offer.learnTitle} onChange={(value) => change((draft) => { draft.offer.learnTitle = value; })} />
           <TextArea
             label="Що людина дізнається — по одному в рядок"
-            value={content.offer.learnItems.join("
-")}
+            value={content.offer.learnItems.join("\n")}
             rows={8}
             onChange={(value) => change((draft) => {
-              draft.offer.learnItems = value.split("
-").map((item) => item.trim()).filter(Boolean);
+              draft.offer.learnItems = value.split("\n").map((item) => item.trim()).filter(Boolean);
             })}
           />
           <Field label="CTA" value={content.offer.cta} onChange={(value) => change((draft) => { draft.offer.cta = value; })} />
@@ -408,12 +406,10 @@ export default function AdminPage() {
         <TextArea label="Опис" value={content.lead.text} onChange={(value) => change((draft) => { draft.lead.text = value; })} />
         <TextArea
           label="Варіанти — по одному в рядок"
-          value={content.lead.courseOptions.join("
-")}
+          value={content.lead.courseOptions.join("\n")}
           rows={5}
           onChange={(value) => change((draft) => {
-            draft.lead.courseOptions = value.split("
-").filter(Boolean);
+            draft.lead.courseOptions = value.split("\n").filter(Boolean);
           })}
         />
       </div>
