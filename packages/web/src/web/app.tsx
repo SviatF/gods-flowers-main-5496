@@ -1,6 +1,6 @@
 import { Route, Switch } from "wouter";
 import Index from "./pages/index";
-import AdminPage from "./pages/admin";
+import AdminPage from "./pages/admin";\nimport PolicyPage from "./pages/policy";
 import { Provider } from "./components/provider";
 import { SiteContentProvider } from "./components/site-content-provider";
 import { AgentFeedback } from "@runablehq/website-runtime";
@@ -10,7 +10,7 @@ function App() {
     <Provider>
       <SiteContentProvider>
         <Switch>
-          <Route path="/admin" component={AdminPage} />
+          <Route path="/admin" component={AdminPage} />\n          <Route path="/policy" component={PolicyPage} />
           <Route path="/" component={Index} />
         </Switch>
       </SiteContentProvider>
