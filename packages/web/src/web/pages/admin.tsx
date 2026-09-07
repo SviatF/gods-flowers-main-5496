@@ -149,7 +149,7 @@ function fileToDataUrl(file: File) {
 export default function AdminPage() {
   const [status, setStatus] = useState<Status>("checking");
   const [previewOnly, setPreviewOnly] = useState(false);
-  const [password, setPassword] = useState("");
+  const [loginName, setLoginName] = useState("");\n  const [password, setPassword] = useState("");
   const [content, setContent] = useState<SiteContent | null>(null);
   const [section, setSection] = useState<SectionKey>("submissions");
   const [saving, setSaving] = useState(false);
@@ -204,10 +204,10 @@ export default function AdminPage() {
     const response = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ login: loginName.trim(), password }),
     });
     if (!response.ok) {
-      setNotice(response.status === 503 ? "На сервері ще не заданий ADMIN_PASSWORD." : "Невірний пароль.");
+      setNotice(response.status === 503 ? "На сервері ще не задані ADMIN_LOGIN / ADMIN_PASSWORD." : "Невірний логін або пароль.");
       return;
     }
     await loadContent();
@@ -275,11 +275,22 @@ export default function AdminPage() {
         <form onSubmit={login} className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8">
           <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/50">GOD&apos;S FLOWERS CMS</p>
           <h1 className="mb-8 text-3xl font-medium">Вхід в адмінку</h1>
+          <label className="mb-4 block">
+            <span className="mb-2 block text-xs text-white/60">Логін</span>
+            <input
+              autoFocus
+              type="email"
+              autoComplete="username"
+              value={loginName}
+              onChange={(event) => setLoginName(event.target.value)}
+              className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 outline-none"
+            />
+          </label>
           <label className="mb-5 block">
             <span className="mb-2 block text-xs text-white/60">Пароль</span>
             <input
-              autoFocus
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 outline-none"
