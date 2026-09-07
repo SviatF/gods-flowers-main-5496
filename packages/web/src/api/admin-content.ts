@@ -100,12 +100,14 @@ export function registerAdminContentRoutes(app: Hono) {
 
   app.post("/api/admin/login", async (c) => {
     if (!credentialsConfigured()) {
-      return c.json({ error: "ADMIN_PASSWORD is not configured" }, 503);
+      return c.json({ error: "ADMIN_LOGIN or ADMIN_PASSWORD is not configured" }, 503);
     }
 
-    const body = await c.req.json<{ password?: string }>().catch(() => ({}));
-    if (!body.password || !safeEqual(body.password, process.env.ADMIN_PASSWORD!)) {
-      return c.json({ error: "Невірний пароль" }, 401);
+    const body = await c.req.json<{ login?: string; password?: string }>().catch(() => ({}));
+    const loginOk = Boolean(body.login) && safeEqual(body.login!, process.env.ADMIN_LOGIN!);
+    const passwordOk = Boolean(body.password) && safeEqual(body.password!, process.env.ADMIN_PASSWORD!);
+    if (!loginOk || !passwordOk) {
+      return c.json({ error: "Невірний логін або пароль" }, 401);
     }
 
     setCookie(c, SESSION_COOKIE, createSession(), {
