@@ -6,11 +6,11 @@
 export const brand = {
   name: "GOD'S FLOWERS",
   logo: "/images/logo.png",
-  phone: "+380 67 000 00 00",
-  phoneHref: "tel:+380670000000",
+  phone: "+380 75 505 38 02",
+  phoneHref: "tel:+380755053802",
   instagram: "gods.flowers",
   instagramHref: "https://instagram.com/",
-  address: "м. Київ, вул. Ярославів Вал, 21",
+  address: "вул. Сагайдачного, 5, Софіївська Борщагівка, Київська область, 08147",
 };
 
 export const nav = [
