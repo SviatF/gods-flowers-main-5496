@@ -2,6 +2,8 @@ import { Route, Switch } from "wouter";
 import Index from "./pages/index";
 import AdminPage from "./pages/admin";
 import PolicyPage from "./pages/policy";
+import TermsPage from "./pages/terms";
+import RefundPage from "./pages/refund";
 import { Provider } from "./components/provider";
 import { SiteContentProvider } from "./components/site-content-provider";
 import { AgentFeedback } from "@runablehq/website-runtime";
@@ -13,6 +15,8 @@ function App() {
         <Switch>
           <Route path="/admin" component={AdminPage} />
           <Route path="/policy" component={PolicyPage} />
+          <Route path="/terms" component={TermsPage} />
+          <Route path="/refund" component={RefundPage} />
           <Route path="/" component={Index} />
         </Switch>
       </SiteContentProvider>
