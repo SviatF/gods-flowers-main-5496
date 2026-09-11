@@ -4,6 +4,7 @@ import AdminPage from "./pages/admin";
 import PolicyPage from "./pages/policy";
 import TermsPage from "./pages/terms";
 import RefundPage from "./pages/refund";
+import ThanksPage from "./pages/thanks";
 import { Provider } from "./components/provider";
 import { SiteContentProvider } from "./components/site-content-provider";
 import { AgentFeedback } from "@runablehq/website-runtime";
@@ -17,6 +18,7 @@ function App() {
           <Route path="/policy" component={PolicyPage} />
           <Route path="/terms" component={TermsPage} />
           <Route path="/refund" component={RefundPage} />
+          <Route path="/thanks" component={ThanksPage} />
           <Route path="/" component={Index} />
         </Switch>
       </SiteContentProvider>
