@@ -47,10 +47,15 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
     if (fields.name.trim().length < 2) return setError("Вкажіть, будь ласка, імʼя.");
     if (fields.phone.trim().length < 9) return setError("Вкажіть коректний номер телефону.");
 
+    const customer = {
+      name: fields.name.trim(),
+      phone: fields.phone.trim(),
+    };
+
     createLead.mutate(
       {
-        name: fields.name.trim(),
-        phone: fields.phone.trim(),
+        name: customer.name,
+        phone: customer.phone,
         course: fields.course || lead.courseOptions[0] || `Правильний догляд за квітами — ${offer.price}`,
         comment: "",
         pageUrl: window.location.href,
@@ -58,9 +63,14 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
       },
       {
         onSuccess: () => {
-          setFields(createEmpty(initialCourse));
-          onDone?.();
-          void openWayForPay(offer.paymentUrl);
+          void openWayForPay(customer)
+            .then(() => {
+              setFields(createEmpty(initialCourse));
+              onDone?.();
+            })
+            .catch(() => {
+              setError("Не вдалося відкрити оплату WayForPay. Спробуйте ще раз за кілька хвилин.");
+            });
         },
         onError: () => setError("Не вдалося зберегти заявку. Спробуйте ще раз."),
       },
@@ -112,7 +122,7 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
       </button>
 
       <p className="text-[10px] leading-relaxed text-taupe-deep">
-        Після заявки одразу відкриється захищена оплата WayForPay. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
+        Після заявки одразу відкриється захищена оплата WayForPay. Сума в оплаті береться з актуальної ціни курсу в адмінці.
       </p>
     </form>
   );
