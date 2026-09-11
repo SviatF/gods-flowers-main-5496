@@ -41,7 +41,11 @@ export function Courses() {
   const timerActive = offer.timerEnabled && remaining > 0;
   const bonusActive = offer.bonusEnabled && (!offer.timerEnabled || remaining > 0);
 
-  const buy = () => void openWayForPay(offer.paymentUrl);
+  const buy = () => {
+    void openWayForPay().catch(() => {
+      window.alert("Оплата тимчасово недоступна. Спробуйте ще раз за кілька хвилин.");
+    });
+  };
 
   const PurchaseButton = ({ secondary = false }: { secondary?: boolean }) => (
     <button
