@@ -3,7 +3,9 @@ import { offer } from "../../content/site";
 import { openWayForPay } from "../../lib/wayforpay";
 
 function buy() {
-  void openWayForPay(offer.paymentUrl);
+  void openWayForPay().catch(() => {
+    window.alert("Оплата тимчасово недоступна. Спробуйте ще раз за кілька хвилин.");
+  });
 }
 
 export function MobilePurchaseBar() {
