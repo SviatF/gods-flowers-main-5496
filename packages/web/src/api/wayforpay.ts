@@ -84,7 +84,7 @@ async function readOrders(): Promise<PaymentOrder[]> {
 async function writeOrders(orders: PaymentOrder[]) {
   await mkdir(dirname(ordersPath), { recursive: true });
   const limited = orders.slice(-5000);
-  const temp = `${ordersPath}.tmp`;
+  const temp = `${ordersPath}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(temp, `${JSON.stringify(limited, null, 2)}\n`, "utf8");
   await rename(temp, ordersPath);
 }
