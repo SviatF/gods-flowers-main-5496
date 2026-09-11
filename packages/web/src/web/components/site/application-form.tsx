@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { lead, offer } from "../../content/site";
+import { openWayForPay } from "../../lib/wayforpay";
 import { useCreateLead } from "../../queries/leads";
 
 type Fields = {
@@ -29,7 +30,6 @@ function createEmpty(initialCourse?: string): Fields {
 export function ApplicationForm({ compact = false, initialCourse, onDone }: ApplicationFormProps) {
   const [fields, setFields] = useState<Fields>(() => createEmpty(initialCourse));
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
   const createLead = useCreateLead();
 
   useEffect(() => {
@@ -58,28 +58,14 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
       },
       {
         onSuccess: () => {
-          setDone(true);
           setFields(createEmpty(initialCourse));
           onDone?.();
+          void openWayForPay(offer.paymentUrl);
         },
-        onError: () => setError("Не вдалося надіслати заявку. Спробуйте ще раз."),
+        onError: () => setError("Не вдалося зберегти заявку. Спробуйте ще раз."),
       },
     );
   };
-
-  if (done) {
-    return (
-      <div className={`flex flex-col items-start gap-5 rounded-[16px] bg-sand ${compact ? "p-6" : "p-10"}`}>
-        <span className="inline-flex size-14 items-center justify-center rounded-full bg-taupe text-cream">
-          <Check className="size-6" />
-        </span>
-        <h3 className="font-display text-3xl italic text-ink">Готово!</h3>
-        <p className="max-w-sm text-[15px] leading-relaxed text-ink-soft">
-          Контакти отримали. Ми допоможемо завершити оформлення курсу.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={submit} className={`flex flex-col ${compact ? "gap-5" : "gap-7"}`} noValidate>
@@ -118,15 +104,15 @@ export function ApplicationForm({ compact = false, initialCourse, onDone }: Appl
         {createLead.isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Надсилаємо
+            Готуємо оплату
           </>
         ) : (
-          `Отримати курс за ${offer.price}`
+          `Перейти до оплати ${offer.price}`
         )}
       </button>
 
       <p className="text-[10px] leading-relaxed text-taupe-deep">
-        Лише 2 поля. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
+        Після заявки одразу відкриється захищена оплата WayForPay. Натискаючи кнопку, ви погоджуєтесь на обробку персональних даних.
       </p>
     </form>
   );
