@@ -1,14 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import { offer } from "../../content/site";
-import { openLeadApplication } from "./lead-modal";
+import { openWayForPay } from "../../lib/wayforpay";
 
 function buy() {
-  const url = offer.paymentUrl.trim();
-  if (url) {
-    window.location.href = url;
-    return;
-  }
-  openLeadApplication(`Правильний догляд за квітами — ${offer.price}`);
+  void openWayForPay(offer.paymentUrl);
 }
 
 export function MobilePurchaseBar() {
@@ -20,7 +15,7 @@ export function MobilePurchaseBar() {
           <p className="mt-0.5 font-display text-2xl leading-none text-terracotta">{offer.price}</p>
         </div>
         <button type="button" onClick={buy} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-ink px-5 py-3 text-[10px] uppercase tracking-[0.16em] text-cream">
-          Отримати курс <ArrowRight className="size-3.5" />
+          Оплатити курс <ArrowRight className="size-3.5" />
         </button>
       </div>
     </div>
