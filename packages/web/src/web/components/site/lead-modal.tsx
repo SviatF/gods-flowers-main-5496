@@ -74,7 +74,7 @@ export function LeadModal() {
         </div>
 
         <p className="mb-5 text-[13px] leading-relaxed text-ink-soft">
-          Вкажіть імʼя та телефон — без вибору програм і довгої анкети.
+          Вкажіть імʼя та телефон — одразу після заявки відкриється безпечна оплата WayForPay.
         </p>
 
         <ApplicationForm key={formKey} compact initialCourse={course} />
