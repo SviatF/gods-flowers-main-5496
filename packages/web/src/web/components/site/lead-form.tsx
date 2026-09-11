@@ -15,9 +15,11 @@ export function LeadForm() {
               {titleFirst}{titleRest.length ? " " : ""}
               {titleRest.length ? <span className="italic text-taupe">{titleRest.join(" ")}</span> : null}
             </h2>
-            <p className="mt-5 max-w-md text-[14px] leading-relaxed text-ink-soft">{lead.text}</p>
+            <p className="mt-5 max-w-md text-[14px] leading-relaxed text-ink-soft">
+              Вкажіть імʼя та телефон — після збереження заявки одразу відкриється безпечна оплата курсу через WayForPay.
+            </p>
             <div className="mt-6 flex flex-col gap-2.5 text-[12px] text-ink-soft">
-              {["Лише імʼя та телефон", `Курс — ${offer.price}`, "Без довгої анкети"].map((item) => (
+              {["Лише імʼя та телефон", `Курс — ${offer.price}`, "Заявка → оплата WayForPay"].map((item) => (
                 <span key={item} className="flex items-center gap-2"><Check className="size-4 text-taupe" />{item}</span>
               ))}
             </div>
