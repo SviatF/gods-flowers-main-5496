@@ -4,14 +4,12 @@ The CMS is file-based. It does not require Supabase, Firebase, Base44, or anothe
 
 ## Runtime
 
-The current project server runs with Bun.
+The production CityHost runtime uses Node.js.
 
 ```bash
-bun install
-bun run build
-ADMIN_PASSWORD="your-strong-password" \
-ADMIN_SESSION_SECRET="a-long-random-secret" \
-bun run start
+npm install
+npm run build
+npm start
 ```
 
 Open:
@@ -26,34 +24,64 @@ By default the CMS stores data in:
 - `data/site-content.json` — published content
 - `data/leads.json` — website form submissions and lead statuses
 - `data/uploads/` — images uploaded through admin
+- `data/wayforpay-orders.json` — generated WayForPay orders and verified callback statuses
 
 The hosting account must allow the application process to write to these paths.
 
-You can override them with environment variables:
+For production CityHost use persistent paths outside the deploy directory:
 
 ```bash
 CONTENT_FILE_PATH=/absolute/persistent/path/site-content.json
 LEADS_FILE_PATH=/absolute/persistent/path/leads.json
 UPLOAD_DIR=/absolute/persistent/path/uploads
+WAYFORPAY_ORDERS_FILE_PATH=/absolute/persistent/path/wayforpay-orders.json
 ```
-
-For production hosting, point these variables to a persistent directory that is not replaced during deployment. This is especially important for `LEADS_FILE_PATH`, because it contains the applications received from the website.
 
 ## Applications
 
 The public lead form writes each successful submission directly to `LEADS_FILE_PATH`. The `/admin` → `Заявки` tab reads this same file and allows the administrator to change a lead status between `Нова`, `В роботі`, and `Закрито`.
 
-Each lead stores the submission time, name, phone, email, selected program, comment, page URL and referrer when available.
+After a successful lead submission the checkout opens immediately.
 
-## Security
+## Admin security
 
 Required environment variables:
 
-- `ADMIN_PASSWORD` — password for `/admin`
-- `ADMIN_SESSION_SECRET` — long random value used to sign the HttpOnly admin session cookie
+```bash
+ADMIN_LOGIN=admin@example.com
+ADMIN_PASSWORD=your-strong-password
+ADMIN_SESSION_SECRET=a-long-random-secret
+```
 
 Do not expose these values in frontend/Vite variables.
 
+## Dynamic WayForPay checkout
+
+The WayForPay invoice amount is generated server-side from the current CMS value `offer.price`. If the admin changes the price and publishes content, all new invoices use that new amount automatically.
+
+Required production secrets/settings:
+
+```bash
+WAYFORPAY_MERCHANT_ACCOUNT=your-merchant-account
+WAYFORPAY_MERCHANT_SECRET=your-secret-key
+WAYFORPAY_MERCHANT_DOMAIN=godsflowersschool.online
+PUBLIC_SITE_URL=https://godsflowersschool.online
+WAYFORPAY_ORDERS_FILE_PATH=/absolute/persistent/path/wayforpay-orders.json
+```
+
+`WAYFORPAY_MERCHANT_SECRET` must exist only on the server. Never put it in GitHub, Vite variables, or browser code.
+
+Checkout flow:
+
+1. server reads the current `offer.price` from the published CMS JSON;
+2. server creates a signed WayForPay `CREATE_INVOICE` request using HMAC-MD5;
+3. browser opens the returned `invoiceUrl` inside the WayForPay widget;
+4. WayForPay sends a signed payment result to `/api/payments/wayforpay/callback`;
+5. the server verifies the callback signature and records the order status;
+6. `/thanks?order=...` verifies the server-side order before exposing the Telegram course link.
+
+The old 399 UAH hosted payment button is retained only as a temporary fallback while merchant API credentials are not configured, and only while the CMS price is exactly 399 UAH. If the CMS price changes, checkout refuses to use the old fixed-price button.
+
 ## Vercel note
 
-The current Vercel project is configured as a static Vite deployment. It can build the admin UI, but file writes are intentionally intended for the purchased Bun/Node hosting with persistent storage. The public site keeps its bundled content as a fallback if `/api/site-content` is unavailable.
+The Vercel project is used as a build/preview safety check. Persistent CMS writes and production WayForPay callbacks are intended for the CityHost Node runtime with persistent storage.
