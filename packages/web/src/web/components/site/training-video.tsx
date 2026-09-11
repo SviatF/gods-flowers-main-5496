@@ -35,7 +35,11 @@ export function TrainingVideo() {
     setMuted(video.muted);
   };
 
-  const buy = () => void openWayForPay(offer.paymentUrl);
+  const buy = () => {
+    void openWayForPay().catch(() => {
+      window.alert("Оплата тимчасово недоступна. Спробуйте ще раз за кілька хвилин.");
+    });
+  };
 
   return (
     <section className="relative overflow-hidden bg-cream py-16 md:py-24 lg:py-28">
