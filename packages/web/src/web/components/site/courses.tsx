@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, Gift, ShieldCheck } from "lucide-react";
 import { offer } from "../../content/site";
-import { openLeadApplication } from "./lead-modal";
+import { openWayForPay } from "../../lib/wayforpay";
 
 function getRemaining(deadline: string) {
   const target = Date.parse(deadline);
@@ -41,14 +41,7 @@ export function Courses() {
   const timerActive = offer.timerEnabled && remaining > 0;
   const bonusActive = offer.bonusEnabled && (!offer.timerEnabled || remaining > 0);
 
-  const buy = () => {
-    const url = offer.paymentUrl.trim();
-    if (url) {
-      window.location.href = url;
-      return;
-    }
-    openLeadApplication(`Правильний догляд за квітами — ${offer.price}`);
-  };
+  const buy = () => void openWayForPay(offer.paymentUrl);
 
   const PurchaseButton = ({ secondary = false }: { secondary?: boolean }) => (
     <button
@@ -92,6 +85,7 @@ export function Courses() {
 
             <div className="mt-5 lg:mt-2">
               <PurchaseButton />
+              <p className="mt-2 text-center text-[9px] uppercase tracking-[0.13em] text-taupe-deep">Безпечна оплата через WayForPay</p>
               {bonusActive && offer.ctaNote ? (
                 <p className="mt-2.5 text-center text-[10px] leading-relaxed text-terracotta lg:mt-1.5 lg:text-[9px]">{offer.ctaNote}</p>
               ) : null}
@@ -133,12 +127,7 @@ export function Courses() {
               <div className="mt-5 lg:mt-2.5">
                 <p className="mb-2.5 text-[9px] uppercase tracking-[0.18em] text-taupe-deep lg:mb-1.5 lg:text-[8px]">{offer.timerLabel}</p>
                 <div className="grid grid-cols-4 gap-2 lg:gap-1.5">
-                  {[
-                    [pad(time.days), "днів"],
-                    [pad(time.hours), "год"],
-                    [pad(time.minutes), "хв"],
-                    [pad(time.seconds), "сек"],
-                  ].map(([value, label]) => (
+                  {[[pad(time.days), "днів"], [pad(time.hours), "год"], [pad(time.minutes), "хв"], [pad(time.seconds), "сек"]].map(([value, label]) => (
                     <div key={label} className="rounded-[12px] border border-linen bg-white px-2 py-2.5 text-center lg:rounded-[10px] lg:py-1.5">
                       <div className="font-display text-2xl leading-none text-ink lg:text-lg">{value}</div>
                       <div className="mt-1 text-[8px] uppercase tracking-[0.13em] text-taupe-deep lg:mt-0 lg:text-[7px]">{label}</div>
@@ -148,9 +137,7 @@ export function Courses() {
               </div>
             ) : null}
 
-            <div className="mt-5 lg:mt-2.5">
-              <PurchaseButton secondary />
-            </div>
+            <div className="mt-5 lg:mt-2.5"><PurchaseButton secondary /></div>
           </div>
         </div>
       </div>
