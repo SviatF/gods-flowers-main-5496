@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
+import { CircleDollarSign, Eye, Loader2, LogOut, Save, Upload } from "lucide-react";
 import { AdminLeads } from "../components/admin-leads";
 import { getSiteContentSnapshot, type SiteContent } from "../content/site-runtime";
 
@@ -9,7 +9,7 @@ type Status = "checking" | "login" | "ready";
 const sections: Array<{ key: SectionKey; label: string }> = [
   { key: "submissions", label: "Заявки" },
   { key: "hero", label: "Hero" },
-  { key: "offer", label: "Офер 9 €" },
+  { key: "offer", label: "Ціна / оплата" },
   { key: "advantages", label: "Переваги" },
   { key: "cases", label: "Кейси" },
   { key: "brand", label: "Контакти" },
@@ -244,7 +244,7 @@ export default function AdminPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Save failed");
-      setNotice("Зміни опубліковано на сайті.");
+      setNotice("Зміни опубліковано на сайті. Нова ціна одразу використовується для нових рахунків WayForPay.");
       sendPreview(content);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Не вдалося зберегти зміни.");
@@ -329,11 +329,35 @@ export default function AdminPage() {
     if (section === "offer") {
       return (
         <div className="space-y-4">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                <CircleDollarSign className="size-5" />
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Головна ціна</p>
+                <h3 className="mt-1 text-base font-semibold text-neutral-950">Сайт + WayForPay</h3>
+                <p className="mt-1 text-xs leading-relaxed text-neutral-600">
+                  Зміни ціну тут і натисни «Опублікувати». Вона зміниться на сайті, а всі нові рахунки WayForPay будуть створюватися саме на цю суму.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Field
+                label="Ціна курсу для сайту та WayForPay"
+                value={content.offer.price}
+                onChange={(value) => change((draft) => { draft.offer.price = value; })}
+              />
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-emerald-800">
+              Наприклад: 399 ₴ або 499 ₴. Валюта платежу — UAH. Зміна застосовується до нових оплат після публікації.
+            </p>
+          </div>
+
           <Field label="Eyebrow" value={content.offer.eyebrow} onChange={(value) => change((draft) => { draft.offer.eyebrow = value; })} />
           <Field label="Назва курсу" value={content.offer.title} onChange={(value) => change((draft) => { draft.offer.title = value; })} />
           <Field label="Акцент заголовка" value={content.offer.titleAccent} onChange={(value) => change((draft) => { draft.offer.titleAccent = value; })} />
           <TextArea label="Опис" value={content.offer.text} onChange={(value) => change((draft) => { draft.offer.text = value; })} />
-          <Field label="Ціна" value={content.offer.price} onChange={(value) => change((draft) => { draft.offer.price = value; })} />
           <ImageField label="Обкладинка" value={content.offer.image} onUpload={upload} onChange={(value) => change((draft) => { draft.offer.image = value; })} />
           <Field label="Заголовок блоку знань" value={content.offer.learnTitle} onChange={(value) => change((draft) => { draft.offer.learnTitle = value; })} />
           <TextArea
@@ -346,7 +370,9 @@ export default function AdminPage() {
           />
           <Field label="CTA" value={content.offer.cta} onChange={(value) => change((draft) => { draft.offer.cta = value; })} />
           <Field label="Підпис під CTA" value={content.offer.ctaNote} onChange={(value) => change((draft) => { draft.offer.ctaNote = value; })} />
-          <Field label="Посилання на оплату" value={content.offer.paymentUrl} onChange={(value) => change((draft) => { draft.offer.paymentUrl = value; })} />
+          <div className="rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 text-xs leading-relaxed text-neutral-500">
+            WayForPay працює через динамічний API. Старе ручне «посилання на оплату» більше не потрібно для зміни суми.
+          </div>
           <Toggle label="Показувати таймер" checked={content.offer.timerEnabled} onChange={(value) => change((draft) => { draft.offer.timerEnabled = value; })} />
           <Field label="Дедлайн таймера" value={content.offer.deadline} onChange={(value) => change((draft) => { draft.offer.deadline = value; })} />
           <Field label="Підпис таймера" value={content.offer.timerLabel} onChange={(value) => change((draft) => { draft.offer.timerLabel = value; })} />
