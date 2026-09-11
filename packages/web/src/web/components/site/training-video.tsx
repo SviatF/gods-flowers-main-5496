@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ArrowRight, Check, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { offer } from "../../content/site";
-import { openLeadApplication } from "./lead-modal";
+import { openWayForPay } from "../../lib/wayforpay";
 
 const VIDEO_SRC = "/videos/IMG_1842_web_1080p.mp4";
 
@@ -35,14 +35,7 @@ export function TrainingVideo() {
     setMuted(video.muted);
   };
 
-  const buy = () => {
-    const url = offer.paymentUrl.trim();
-    if (url) {
-      window.location.href = url;
-      return;
-    }
-    openLeadApplication(`Правильний догляд за квітами — ${offer.price}`);
-  };
+  const buy = () => void openWayForPay(offer.paymentUrl);
 
   return (
     <section className="relative overflow-hidden bg-cream py-16 md:py-24 lg:py-28">
@@ -81,7 +74,7 @@ export function TrainingVideo() {
               <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
             </button>
             <p className="mt-3 text-[10px] leading-relaxed text-taupe-deep">
-              Один курс · онлайн-доступ · практичні правила догляду за квітами
+              Безпечна оплата через WayForPay · онлайн-доступ одразу після підтвердження
             </p>
           </div>
         </div>
