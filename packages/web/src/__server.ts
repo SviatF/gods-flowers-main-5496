@@ -4,6 +4,12 @@ const port = Number(process.env.PORT ?? 3000);
 const distDir = `${import.meta.dir}/../dist`;
 const indexPath = `${distDir}/index.html`;
 
+function stripGtmFromAdmin(html: string) {
+  return html
+    .replace(/\s*<!-- Google Tag Manager -->[\s\S]*?<!-- End Google Tag Manager -->\s*/g, "\n")
+    .replace(/\s*<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->\s*/g, "\n");
+}
+
 const server = Bun.serve({
   port,
   async fetch(request) {
@@ -17,12 +23,19 @@ const server = Bun.serve({
     const file = Bun.file(filePath);
 
     if (await file.exists()) {
+      if (url.pathname.startsWith("/admin") && filePath === indexPath) {
+        return new Response(stripGtmFromAdmin(await file.text()), {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
       return new Response(file);
     }
 
     const index = Bun.file(indexPath);
     if (await index.exists()) {
-      return new Response(index, {
+      const html = await index.text();
+      const responseHtml = url.pathname.startsWith("/admin") ? stripGtmFromAdmin(html) : html;
+      return new Response(responseHtml, {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
