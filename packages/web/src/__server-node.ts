@@ -7,10 +7,12 @@ import app from "./api";
 const distDir = resolve(process.cwd(), "dist");
 const indexPath = resolve(distDir, "index.html");
 
-function stripGtmFromAdmin(html: string) {
+function stripTrackingFromAdmin(html: string) {
   return html
     .replace(/\s*<!-- Google Tag Manager -->[\s\S]*?<!-- End Google Tag Manager -->\s*/g, "\n")
-    .replace(/\s*<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->\s*/g, "\n");
+    .replace(/\s*<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->\s*/g, "\n")
+    .replace(/\s*<!-- Meta Pixel Code -->[\s\S]*?<!-- End Meta Pixel Code -->\s*/g, "\n")
+    .replace(/\s*<!-- Meta Pixel Code \(noscript\) -->[\s\S]*?<!-- End Meta Pixel Code \(noscript\) -->\s*/g, "\n");
 }
 
 app.use("/*", serveStatic({ root: distDir }));
@@ -20,7 +22,7 @@ app.get("*", async (c) => {
 
   try {
     const html = await readFile(indexPath, "utf8");
-    const responseHtml = c.req.path.startsWith("/admin") ? stripGtmFromAdmin(html) : html;
+    const responseHtml = c.req.path.startsWith("/admin") ? stripTrackingFromAdmin(html) : html;
     return c.html(responseHtml);
   } catch {
     return c.text("Build output not found. Run `npm run build` first.", 500);
