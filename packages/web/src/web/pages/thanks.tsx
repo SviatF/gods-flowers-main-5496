@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, LockKeyhole } from "lucide-react";
 import { Link } from "wouter";
 import { brand, offer } from "../content/site";
+import { trackMetaPurchaseOnce } from "../lib/meta-pixel";
 import { hasApprovedPaymentSession } from "../lib/wayforpay";
 
 const TELEGRAM_COURSE_URL = "https://t.me/+m_t7AcXnCNtjYzBi";
@@ -17,6 +18,8 @@ export default function ThanksPage() {
 
     const orderReference = new URLSearchParams(window.location.search).get("order");
     if (!orderReference) {
+      // Legacy widget fallback can still unlock the thank-you page, but it must never
+      // fire the Meta Purchase objective because it has not been server-verified.
       setApproved(hasApprovedPaymentSession());
       setChecking(false);
       return;
@@ -36,14 +39,15 @@ export default function ThanksPage() {
           | null;
 
         if (!active) return;
-        if (response.ok && data?.approved) {
+        if (response.ok && data?.approved && typeof data.amount === "number") {
+          trackMetaPurchaseOnce(orderReference, data.amount, data.currency || "UAH");
           setApproved(true);
-          setPaidAmount(data.amount ? `${data.amount} ₴` : null);
+          setPaidAmount(`${data.amount} ₴`);
           setChecking(false);
           return;
         }
       } catch {
-        // Callback can arrive a moment after the widget approved event.
+        // WayForPay callback can arrive a moment after the widget approved event.
       }
 
       if (!active) return;
