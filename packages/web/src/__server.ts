@@ -4,10 +4,12 @@ const port = Number(process.env.PORT ?? 3000);
 const distDir = `${import.meta.dir}/../dist`;
 const indexPath = `${distDir}/index.html`;
 
-function stripGtmFromAdmin(html: string) {
+function stripTrackingFromAdmin(html: string) {
   return html
     .replace(/\s*<!-- Google Tag Manager -->[\s\S]*?<!-- End Google Tag Manager -->\s*/g, "\n")
-    .replace(/\s*<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->\s*/g, "\n");
+    .replace(/\s*<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->\s*/g, "\n")
+    .replace(/\s*<!-- Meta Pixel Code -->[\s\S]*?<!-- End Meta Pixel Code -->\s*/g, "\n")
+    .replace(/\s*<!-- Meta Pixel Code \(noscript\) -->[\s\S]*?<!-- End Meta Pixel Code \(noscript\) -->\s*/g, "\n");
 }
 
 const server = Bun.serve({
@@ -24,7 +26,7 @@ const server = Bun.serve({
 
     if (await file.exists()) {
       if (url.pathname.startsWith("/admin") && filePath === indexPath) {
-        return new Response(stripGtmFromAdmin(await file.text()), {
+        return new Response(stripTrackingFromAdmin(await file.text()), {
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
@@ -34,7 +36,7 @@ const server = Bun.serve({
     const index = Bun.file(indexPath);
     if (await index.exists()) {
       const html = await index.text();
-      const responseHtml = url.pathname.startsWith("/admin") ? stripGtmFromAdmin(html) : html;
+      const responseHtml = url.pathname.startsWith("/admin") ? stripTrackingFromAdmin(html) : html;
       return new Response(responseHtml, {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
