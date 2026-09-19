@@ -25,7 +25,7 @@ type PaymentOrder = {
   clientPhone?: string;
 };
 
-type WayForPayCallback = {
+type WayForPayStatus = {
   merchantAccount?: string;
   orderReference?: string;
   merchantSignature?: string;
@@ -35,7 +35,10 @@ type WayForPayCallback = {
   cardPan?: string;
   transactionStatus?: string;
   reasonCode?: string | number;
+  reason?: string;
 };
+
+type WayForPayCallback = WayForPayStatus;
 
 function hmacMd5(value: string, secret: string) {
   return createHmac("md5", secret).update(value, "utf8").digest("hex");
@@ -97,15 +100,35 @@ async function upsertOrder(next: PaymentOrder) {
   await writeOrders(orders);
 }
 
-async function updateOrderStatus(orderReference: string, status: string) {
+async function persistGatewayStatus(orderReference: string, gateway: WayForPayStatus) {
   const orders = await readOrders();
   const index = orders.findIndex((order) => order.orderReference === orderReference);
-  if (index < 0) return;
-  orders[index] = {
-    ...orders[index],
-    status,
-    updatedAt: new Date().toISOString(),
-  };
+  const now = new Date().toISOString();
+  const parsedAmount = Number(gateway.amount);
+  const status = gateway.transactionStatus || "Unknown";
+  const currency = gateway.currency || CURRENCY;
+
+  if (index >= 0) {
+    orders[index] = {
+      ...orders[index],
+      status,
+      amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : orders[index].amount,
+      currency,
+      updatedAt: now,
+    };
+  } else if (Number.isFinite(parsedAmount) && parsedAmount > 0) {
+    // A valid signed callback/status response is enough to recover a payment even if
+    // the local Pending record was lost during a deploy or filesystem race.
+    orders.push({
+      orderReference,
+      amount: parsedAmount,
+      currency,
+      status,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
   await writeOrders(orders);
 }
 
@@ -113,6 +136,61 @@ function normalizePhone(phone?: string) {
   if (!phone) return undefined;
   const digits = phone.replace(/\D/g, "");
   return digits.length >= 9 && digits.length <= 13 ? digits : undefined;
+}
+
+function gatewaySignatureBase(body: WayForPayStatus) {
+  return [
+    body.merchantAccount || "",
+    body.orderReference || "",
+    body.amount ?? "",
+    body.currency || "",
+    body.authCode || "",
+    body.cardPan || "",
+    body.transactionStatus || "",
+    body.reasonCode ?? "",
+  ].join(";");
+}
+
+function validGatewaySignature(
+  body: WayForPayStatus,
+  merchantAccount: string,
+  merchantSecret: string,
+) {
+  if (!body.orderReference || body.merchantAccount !== merchantAccount || !body.merchantSignature) {
+    return false;
+  }
+  const expectedSignature = hmacMd5(gatewaySignatureBase(body), merchantSecret);
+  return safeEqual(body.merchantSignature, expectedSignature);
+}
+
+async function checkStatusAtWayForPay(
+  orderReference: string,
+  merchantAccount: string,
+  merchantSecret: string,
+): Promise<WayForPayStatus | null> {
+  const merchantSignature = hmacMd5(`${merchantAccount};${orderReference}`, merchantSecret);
+
+  try {
+    const response = await fetch(WAYFORPAY_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transactionType: "CHECK_STATUS",
+        merchantAccount,
+        orderReference,
+        merchantSignature,
+        apiVersion: 1,
+      }),
+    });
+
+    if (!response.ok) return null;
+    const result = (await response.json().catch(() => null)) as WayForPayStatus | null;
+    if (!result || result.orderReference !== orderReference) return null;
+    if (!validGatewaySignature(result, merchantAccount, merchantSecret)) return null;
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 export function registerWayForPayRoutes(app: Hono) {
@@ -223,30 +301,18 @@ export function registerWayForPayRoutes(app: Hono) {
 
     const body = await c.req.json<WayForPayCallback>().catch(() => ({}));
     const orderReference = body.orderReference || "";
-    const receivedSignature = body.merchantSignature || "";
 
-    const signatureBase = [
-      body.merchantAccount || "",
-      orderReference,
-      body.amount ?? "",
-      body.currency || "",
-      body.authCode || "",
-      body.cardPan || "",
-      body.transactionStatus || "",
-      body.reasonCode ?? "",
-    ].join(";");
-
-    const expectedSignature = hmacMd5(signatureBase, merchantSecret);
-    if (
-      !orderReference ||
-      body.merchantAccount !== merchantAccount ||
-      !receivedSignature ||
-      !safeEqual(receivedSignature, expectedSignature)
-    ) {
+    if (!validGatewaySignature(body, merchantAccount, merchantSecret)) {
+      console.warn("WayForPay callback rejected: invalid signature", { orderReference });
       return c.json({ error: "Invalid WayForPay signature" }, 401);
     }
 
-    await updateOrderStatus(orderReference, body.transactionStatus || "Unknown");
+    await persistGatewayStatus(orderReference, body);
+    console.info("WayForPay callback accepted", {
+      orderReference,
+      transactionStatus: body.transactionStatus,
+      amount: body.amount,
+    });
 
     const time = Math.floor(Date.now() / 1000);
     const status = "accept";
@@ -257,8 +323,26 @@ export function registerWayForPayRoutes(app: Hono) {
 
   app.get("/api/payments/wayforpay/status/:orderReference", async (c) => {
     const orderReference = c.req.param("orderReference");
-    const orders = await readOrders();
-    const order = orders.find((item) => item.orderReference === orderReference);
+    const { merchantAccount, merchantSecret } = merchantConfig();
+    let orders = await readOrders();
+    let order = orders.find((item) => item.orderReference === orderReference);
+
+    // If callback delivery was delayed/lost, ask WayForPay directly. This makes
+    // course access independent from browser postMessage and serviceUrl delivery.
+    if (
+      order &&
+      order.status.toLowerCase() !== "approved" &&
+      merchantAccount &&
+      merchantSecret
+    ) {
+      const gateway = await checkStatusAtWayForPay(orderReference, merchantAccount, merchantSecret);
+      if (gateway) {
+        await persistGatewayStatus(orderReference, gateway);
+        orders = await readOrders();
+        order = orders.find((item) => item.orderReference === orderReference);
+      }
+    }
+
     if (!order) return c.json({ found: false, approved: false }, 404);
 
     return c.json({
