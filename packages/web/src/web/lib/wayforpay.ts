@@ -1,10 +1,11 @@
-import { offer } from "../content/site";
+import { trackMetaPurchaseOnce } from "./meta-pixel";
 
-const LEGACY_WAYFORPAY_URL = "https://secure.wayforpay.com/button/bbb0aa83bf7b8";
 const WAYFORPAY_SCRIPT_URL = "https://secure.wayforpay.com/server/pay-widget.js?ref=button";
 const WAYFORPAY_ORIGIN = "https://secure.wayforpay.com";
 const APPROVED_SESSION_KEY = "godsflowers_wayforpay_approved";
 const ACTIVE_ORDER_KEY = "godsflowers_wayforpay_order";
+const STATUS_POLL_INTERVAL_MS = 1000;
+const STATUS_POLL_MAX_ATTEMPTS = 300;
 
 type CheckoutCustomer = {
   name?: string;
@@ -18,6 +19,14 @@ type InvoiceResponse = {
   currency: string;
 };
 
+type PaymentStatusResponse = {
+  found?: boolean;
+  approved?: boolean;
+  status?: string;
+  amount?: number;
+  currency?: string;
+};
+
 declare global {
   interface Window {
     Wayforpay?: new () => {
@@ -28,6 +37,59 @@ declare global {
 
 let loader: Promise<void> | null = null;
 let approvedListenerInstalled = false;
+let watchedOrderReference: string | null = null;
+let watchGeneration = 0;
+
+function thanksUrl(orderReference: string) {
+  return `/thanks?order=${encodeURIComponent(orderReference)}`;
+}
+
+async function fetchOrderStatus(orderReference: string): Promise<PaymentStatusResponse | null> {
+  try {
+    const response = await fetch(`/api/payments/wayforpay/status/${encodeURIComponent(orderReference)}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    return (await response.json().catch(() => null)) as PaymentStatusResponse | null;
+  } catch {
+    return null;
+  }
+}
+
+async function redirectIfServerApproved(orderReference: string) {
+  const data = await fetchOrderStatus(orderReference);
+  if (!data?.approved || typeof data.amount !== "number") return false;
+
+  sessionStorage.setItem(APPROVED_SESSION_KEY, "1");
+  trackMetaPurchaseOnce(orderReference, data.amount, data.currency || "UAH");
+
+  const target = thanksUrl(orderReference);
+  if (`${window.location.pathname}${window.location.search}` !== target) {
+    window.location.assign(target);
+  }
+  return true;
+}
+
+function startServerApprovalWatch(orderReference: string) {
+  if (typeof window === "undefined") return;
+
+  watchedOrderReference = orderReference;
+  const generation = ++watchGeneration;
+  let attempts = 0;
+
+  const check = async () => {
+    if (generation !== watchGeneration || watchedOrderReference !== orderReference) return;
+    attempts += 1;
+
+    if (await redirectIfServerApproved(orderReference)) return;
+
+    if (attempts < STATUS_POLL_MAX_ATTEMPTS) {
+      window.setTimeout(check, STATUS_POLL_INTERVAL_MS);
+    }
+  };
+
+  void check();
+}
 
 function installApprovedListener() {
   if (approvedListenerInstalled || typeof window === "undefined") return;
@@ -37,12 +99,12 @@ function installApprovedListener() {
     if (event.origin !== WAYFORPAY_ORIGIN) return;
     if (event.data !== "WfpWidgetEventApproved") return;
 
-    sessionStorage.setItem(APPROVED_SESSION_KEY, "1");
     const orderReference = sessionStorage.getItem(ACTIVE_ORDER_KEY);
-    const target = orderReference
-      ? `/thanks?order=${encodeURIComponent(orderReference)}`
-      : "/thanks";
-    window.location.assign(target);
+    if (!orderReference) return;
+
+    // The widget event is only a hint. Access and Purchase are unlocked only after
+    // our server has received and verified WayForPay's signed Approved callback.
+    void redirectIfServerApproved(orderReference);
   });
 }
 
@@ -72,11 +134,6 @@ function loadWidget() {
   return loader;
 }
 
-function displayedPriceIsLegacy399() {
-  const value = Number(String(offer.price).replace(/\s+/g, "").replace(",", ".").replace(/[^0-9.]/g, ""));
-  return value === 399;
-}
-
 async function createDynamicInvoice(customer?: CheckoutCustomer): Promise<InvoiceResponse> {
   const response = await fetch("/api/payments/wayforpay/invoice", {
     method: "POST",
@@ -85,11 +142,16 @@ async function createDynamicInvoice(customer?: CheckoutCustomer): Promise<Invoic
   });
 
   const data = (await response.json().catch(() => null)) as
-    | (Partial<InvoiceResponse> & { error?: string })
+    | (Partial<InvoiceResponse> & { error?: string; reason?: string; reasonCode?: string | number })
     | null;
 
   if (!response.ok || !data?.invoiceUrl || !data.orderReference) {
-    throw new Error(data?.error || "Не вдалося створити рахунок WayForPay");
+    const detail = data?.reason || data?.reasonCode;
+    throw new Error(
+      detail
+        ? `${data?.error || "Не вдалося створити рахунок WayForPay"}: ${detail}`
+        : data?.error || "Не вдалося створити рахунок WayForPay",
+    );
   }
 
   return data as InvoiceResponse;
@@ -98,28 +160,20 @@ async function createDynamicInvoice(customer?: CheckoutCustomer): Promise<Invoic
 export async function openWayForPay(customer?: CheckoutCustomer) {
   installApprovedListener();
 
-  let invoiceUrl: string;
-  try {
-    const invoice = await createDynamicInvoice(customer);
-    invoiceUrl = invoice.invoiceUrl;
-    sessionStorage.setItem(ACTIVE_ORDER_KEY, invoice.orderReference);
-  } catch (error) {
-    // Keep the already-approved 399 UAH button usable while merchant API credentials
-    // are being configured. Never use this fallback for a changed CMS price,
-    // otherwise the amount shown on the site could differ from the payment amount.
-    if (!displayedPriceIsLegacy399()) throw error;
-    invoiceUrl = LEGACY_WAYFORPAY_URL;
-    sessionStorage.removeItem(ACTIVE_ORDER_KEY);
-  }
+  // There is intentionally no legacy fixed-price fallback here. Every successful
+  // payment must have our own orderReference so the server can verify it.
+  const invoice = await createDynamicInvoice(customer);
+  sessionStorage.removeItem(APPROVED_SESSION_KEY);
+  sessionStorage.setItem(ACTIVE_ORDER_KEY, invoice.orderReference);
+  startServerApprovalWatch(invoice.orderReference);
 
-  try {
-    await loadWidget();
-    if (!window.Wayforpay) throw new Error("WayForPay widget unavailable");
-    const wayforpay = new window.Wayforpay();
-    wayforpay.invoice(invoiceUrl, true);
-  } catch {
-    window.location.assign(invoiceUrl);
-  }
+  await loadWidget();
+  if (!window.Wayforpay) throw new Error("WayForPay widget unavailable");
+
+  const wayforpay = new window.Wayforpay();
+  // Force the widget even on mobile so the parent page stays alive and can observe
+  // the independently verified server status.
+  wayforpay.invoice(invoice.invoiceUrl, true);
 }
 
 export function hasApprovedPaymentSession() {
