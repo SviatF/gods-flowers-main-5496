@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 import { createApp } from "./__core/app";
 import { registerAdminContentRoutes } from "./admin-content";
+import { registerPaymentSheetSyncMiddleware } from "./payment-sheet-sync";
 import { registerWayForPayRoutes } from "./wayforpay";
 import { leads } from "./routes/leads";
 import { ping } from "./routes/ping";
@@ -22,6 +23,7 @@ export type AppRouterClient = RouterClient<AppRouter>;
 
 const app = createApp(router);
 registerAdminContentRoutes(app);
+registerPaymentSheetSyncMiddleware(app);
 registerWayForPayRoutes(app);
 
 export default app;
