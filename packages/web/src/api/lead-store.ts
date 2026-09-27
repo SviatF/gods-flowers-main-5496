@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { cloudflareStorage, listR2Keys, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
 
 export type LeadStatus = "new" | "contacted" | "closed";
@@ -28,11 +27,7 @@ export type CreateLeadInput = {
   referrer?: string;
 };
 
-const defaultLeadsPath = fileURLToPath(
-  new URL("../../data/leads.json", import.meta.url),
-);
-
-const leadsPath = process.env.LEADS_FILE_PATH || defaultLeadsPath;
+const leadsPath = process.env.LEADS_FILE_PATH || "data/leads.json";
 let writeQueue: Promise<void> = Promise.resolve();
 
 function leadObjectKey(id: string) {
