@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cloudflareStorage, listR2Keys, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
 
 export type LeadStatus = "new" | "contacted" | "closed";
 
@@ -34,7 +35,17 @@ const defaultLeadsPath = fileURLToPath(
 const leadsPath = process.env.LEADS_FILE_PATH || defaultLeadsPath;
 let writeQueue: Promise<void> = Promise.resolve();
 
+function leadObjectKey(id: string) {
+  return `leads/${id}.json`;
+}
+
 async function readLeads(): Promise<LeadRecord[]> {
+  if (cloudflareStorage()) {
+    const keys = await listR2Keys("leads/", 5000);
+    const rows = await Promise.all(keys.map((key) => readJsonFromR2<LeadRecord>(key)));
+    return rows.filter((row): row is LeadRecord => Boolean(row));
+  }
+
   try {
     const raw = await readFile(leadsPath, "utf8");
     const data = JSON.parse(raw) as unknown;
@@ -59,8 +70,7 @@ function serialized<T>(task: () => Promise<T>): Promise<T> {
 }
 
 export async function createLead(input: CreateLeadInput) {
-  return serialized(async () => {
-    const leads = await readLeads();
+  const create = async () => {
     const now = new Date().toISOString();
     const lead: LeadRecord = {
       id: randomUUID(),
@@ -75,10 +85,18 @@ export async function createLead(input: CreateLeadInput) {
       updatedAt: now,
     };
 
+    if (cloudflareStorage()) {
+      await writeJsonToR2(leadObjectKey(lead.id), lead);
+      return lead;
+    }
+
+    const leads = await readLeads();
     leads.unshift(lead);
     await writeLeads(leads.slice(0, 5000));
     return lead;
-  });
+  };
+
+  return cloudflareStorage() ? create() : serialized(create);
 }
 
 export async function listLeads() {
@@ -87,6 +105,16 @@ export async function listLeads() {
 }
 
 export async function updateLeadStatus(id: string, status: LeadStatus) {
+  if (cloudflareStorage()) {
+    const lead = await readJsonFromR2<LeadRecord>(leadObjectKey(id));
+    if (!lead) return null;
+
+    lead.status = status;
+    lead.updatedAt = new Date().toISOString();
+    await writeJsonToR2(leadObjectKey(id), lead);
+    return lead;
+  }
+
   return serialized(async () => {
     const leads = await readLeads();
     const lead = leads.find((item) => item.id === id);
