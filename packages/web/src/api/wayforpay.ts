@@ -1,7 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Hono } from "hono";
 import { cloudflareStorage, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
 
@@ -10,11 +9,8 @@ const CURRENCY = "UAH";
 const PRODUCT_NAME = "Онлайн-курс «Квіти, що залишаються свіжими довше»";
 const CONTENT_R2_KEY = "content/site-content.json";
 
-const defaultContentPath = fileURLToPath(new URL("../../data/site-content.json", import.meta.url));
-const defaultOrdersPath = fileURLToPath(new URL("../../data/wayforpay-orders.json", import.meta.url));
-
-const contentPath = process.env.CONTENT_FILE_PATH || defaultContentPath;
-const ordersPath = process.env.WAYFORPAY_ORDERS_FILE_PATH || defaultOrdersPath;
+const contentPath = process.env.CONTENT_FILE_PATH || "data/site-content.json";
+const ordersPath = process.env.WAYFORPAY_ORDERS_FILE_PATH || "data/wayforpay-orders.json";
 
 type PaymentOrder = {
   orderReference: string;
@@ -165,8 +161,6 @@ async function persistGatewayStatus(orderReference: string, gateway: WayForPaySt
       updatedAt: now,
     };
   } else if (Number.isFinite(parsedAmount) && parsedAmount > 0) {
-    // A valid signed callback/status response is enough to recover a payment even if
-    // the local Pending record was lost during a deploy or filesystem race.
     orders.push({
       orderReference,
       amount: parsedAmount,
@@ -374,8 +368,6 @@ export function registerWayForPayRoutes(app: Hono) {
     const { merchantAccount, merchantSecret } = merchantConfig();
     let order = await getOrder(orderReference);
 
-    // If callback delivery was delayed/lost, ask WayForPay directly. This also
-    // recovers a missing local order from a valid signed gateway response.
     if (
       (!order || order.status.toLowerCase() !== "approved") &&
       merchantAccount &&
