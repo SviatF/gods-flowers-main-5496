@@ -4,6 +4,7 @@ import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { cloudflareStorage, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
 import { listLeads, updateLeadStatus, type LeadStatus } from "./lead-store";
 
 const SESSION_COOKIE = "gf_admin";
@@ -11,6 +12,7 @@ const MAX_CONTENT_BYTES = 2_000_000;
 const MAX_IMAGE_BYTES = 8_000_000;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const LEAD_STATUSES = new Set<LeadStatus>(["new", "contacted", "closed"]);
+const CONTENT_R2_KEY = "content/site-content.json";
 
 const defaultContentPath = fileURLToPath(
   new URL("../../data/site-content.json", import.meta.url),
@@ -52,6 +54,12 @@ function validSession(token?: string) {
 }
 
 async function readContent() {
+  if (cloudflareStorage()) {
+    const content = await readJsonFromR2<unknown>(CONTENT_R2_KEY);
+    if (content) return content;
+    throw new Error("Cloudflare content object is unavailable");
+  }
+
   const raw = await readFile(contentPath, "utf8");
   return JSON.parse(raw) as unknown;
 }
@@ -61,6 +69,12 @@ async function saveContent(content: unknown) {
   if (Buffer.byteLength(raw) > MAX_CONTENT_BYTES) {
     throw new Error("Content payload is too large");
   }
+
+  if (cloudflareStorage()) {
+    await writeJsonToR2(CONTENT_R2_KEY, content);
+    return;
+  }
+
   await mkdir(dirname(contentPath), { recursive: true });
   await writeFile(contentPath, `${raw}\n`, "utf8");
 }
@@ -77,6 +91,17 @@ function extensionFor(file: File) {
     "image/gif": ".gif",
   };
   return byType[file.type] || extname(file.name).toLowerCase() || ".bin";
+}
+
+function mimeForExtension(name: string) {
+  const ext = extname(name).toLowerCase();
+  return ext === ".png"
+    ? "image/png"
+    : ext === ".webp"
+      ? "image/webp"
+      : ext === ".gif"
+        ? "image/gif"
+        : "image/jpeg";
 }
 
 export function registerAdminContentRoutes(app: Hono) {
@@ -182,8 +207,19 @@ export function registerAdminContentRoutes(app: Hono) {
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) return c.json({ error: "Unsupported image type" }, 400);
     if (file.size > MAX_IMAGE_BYTES) return c.json({ error: "Image must be smaller than 8 MB" }, 400);
 
-    await mkdir(uploadDir, { recursive: true });
     const name = `${Date.now()}-${crypto.randomUUID()}${extensionFor(file)}`;
+    const bucket = cloudflareStorage();
+    if (bucket) {
+      await bucket.put(`media/${name}`, await file.arrayBuffer(), {
+        httpMetadata: {
+          contentType: file.type || mimeForExtension(name),
+          cacheControl: "public, max-age=31536000, immutable",
+        },
+      });
+      return c.json({ path: `/api/media/${name}` });
+    }
+
+    await mkdir(uploadDir, { recursive: true });
     await writeFile(join(uploadDir, name), Buffer.from(await file.arrayBuffer()));
     return c.json({ path: `/api/media/${name}` });
   });
@@ -192,18 +228,26 @@ export function registerAdminContentRoutes(app: Hono) {
     const name = c.req.param("name");
     if (!/^[a-zA-Z0-9._-]+$/.test(name)) return c.notFound();
 
+    const bucket = cloudflareStorage();
+    if (bucket) {
+      const object = await bucket.get(`media/${name}`);
+      if (!object) return c.notFound();
+
+      return new Response(object.body, {
+        headers: {
+          "Content-Type": object.httpMetadata?.contentType || mimeForExtension(name),
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+
     try {
       const data = await readFile(join(uploadDir, name));
-      const ext = extname(name).toLowerCase();
-      const type = ext === ".png"
-        ? "image/png"
-        : ext === ".webp"
-          ? "image/webp"
-          : ext === ".gif"
-            ? "image/gif"
-            : "image/jpeg";
       return new Response(data, {
-        headers: { "Content-Type": type, "Cache-Control": "public, max-age=31536000, immutable" },
+        headers: {
+          "Content-Type": mimeForExtension(name),
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
       });
     } catch {
       return c.notFound();
