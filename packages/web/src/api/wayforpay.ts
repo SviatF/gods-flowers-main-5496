@@ -3,10 +3,12 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Hono } from "hono";
+import { cloudflareStorage, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
 
 const WAYFORPAY_API_URL = "https://api.wayforpay.com/api";
 const CURRENCY = "UAH";
 const PRODUCT_NAME = "Онлайн-курс «Квіти, що залишаються свіжими довше»";
+const CONTENT_R2_KEY = "content/site-content.json";
 
 const defaultContentPath = fileURLToPath(new URL("../../data/site-content.json", import.meta.url));
 const defaultOrdersPath = fileURLToPath(new URL("../../data/wayforpay-orders.json", import.meta.url));
@@ -67,13 +69,21 @@ function parsePrice(value: unknown) {
 }
 
 async function currentAmount() {
-  const raw = await readFile(contentPath, "utf8");
-  const content = JSON.parse(raw) as { offer?: { price?: string | number } };
+  const content = cloudflareStorage()
+    ? await readJsonFromR2<{ offer?: { price?: string | number } }>(CONTENT_R2_KEY)
+    : (JSON.parse(await readFile(contentPath, "utf8")) as { offer?: { price?: string | number } });
+
+  if (!content) throw new Error("Site content is unavailable");
+
   const amount = parsePrice(content.offer?.price);
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error("Invalid course price in CMS");
   }
   return Math.round(amount * 100) / 100;
+}
+
+function orderObjectKey(orderReference: string) {
+  return `orders/${orderReference}.json`;
 }
 
 async function readOrders(): Promise<PaymentOrder[]> {
@@ -92,7 +102,21 @@ async function writeOrders(orders: PaymentOrder[]) {
   await rename(temp, ordersPath);
 }
 
+async function getOrder(orderReference: string) {
+  if (cloudflareStorage()) {
+    return readJsonFromR2<PaymentOrder>(orderObjectKey(orderReference));
+  }
+
+  const orders = await readOrders();
+  return orders.find((order) => order.orderReference === orderReference) || null;
+}
+
 async function upsertOrder(next: PaymentOrder) {
+  if (cloudflareStorage()) {
+    await writeJsonToR2(orderObjectKey(next.orderReference), next);
+    return;
+  }
+
   const orders = await readOrders();
   const index = orders.findIndex((order) => order.orderReference === next.orderReference);
   if (index >= 0) orders[index] = next;
@@ -101,12 +125,36 @@ async function upsertOrder(next: PaymentOrder) {
 }
 
 async function persistGatewayStatus(orderReference: string, gateway: WayForPayStatus) {
-  const orders = await readOrders();
-  const index = orders.findIndex((order) => order.orderReference === orderReference);
   const now = new Date().toISOString();
   const parsedAmount = Number(gateway.amount);
   const status = gateway.transactionStatus || "Unknown";
   const currency = gateway.currency || CURRENCY;
+
+  if (cloudflareStorage()) {
+    const existing = await getOrder(orderReference);
+    if (existing) {
+      await upsertOrder({
+        ...existing,
+        status,
+        amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : existing.amount,
+        currency,
+        updatedAt: now,
+      });
+    } else if (Number.isFinite(parsedAmount) && parsedAmount > 0) {
+      await upsertOrder({
+        orderReference,
+        amount: parsedAmount,
+        currency,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    return;
+  }
+
+  const orders = await readOrders();
+  const index = orders.findIndex((order) => order.orderReference === orderReference);
 
   if (index >= 0) {
     orders[index] = {
@@ -324,22 +372,19 @@ export function registerWayForPayRoutes(app: Hono) {
   app.get("/api/payments/wayforpay/status/:orderReference", async (c) => {
     const orderReference = c.req.param("orderReference");
     const { merchantAccount, merchantSecret } = merchantConfig();
-    let orders = await readOrders();
-    let order = orders.find((item) => item.orderReference === orderReference);
+    let order = await getOrder(orderReference);
 
-    // If callback delivery was delayed/lost, ask WayForPay directly. This makes
-    // course access independent from browser postMessage and serviceUrl delivery.
+    // If callback delivery was delayed/lost, ask WayForPay directly. This also
+    // recovers a missing local order from a valid signed gateway response.
     if (
-      order &&
-      order.status.toLowerCase() !== "approved" &&
+      (!order || order.status.toLowerCase() !== "approved") &&
       merchantAccount &&
       merchantSecret
     ) {
       const gateway = await checkStatusAtWayForPay(orderReference, merchantAccount, merchantSecret);
       if (gateway) {
         await persistGatewayStatus(orderReference, gateway);
-        orders = await readOrders();
-        order = orders.find((item) => item.orderReference === orderReference);
+        order = await getOrder(orderReference);
       }
     }
 
@@ -351,6 +396,8 @@ export function registerWayForPayRoutes(app: Hono) {
       status: order.status,
       amount: order.amount,
       currency: order.currency,
+      clientName: order.clientName || "",
+      clientPhone: order.clientPhone || "",
     }, 200, { "Cache-Control": "no-store" });
   });
 }
