@@ -13,6 +13,8 @@ type StatusPayload = {
   status?: string;
   amount?: number;
   currency?: string;
+  clientName?: string;
+  clientPhone?: string;
 };
 
 export function registerPaymentSheetSyncMiddleware(app: Hono) {
@@ -59,6 +61,8 @@ export function registerPaymentSheetSyncMiddleware(app: Hono) {
       currency: payload.currency || "UAH",
       status: payload.status || "Approved",
       updatedAt: new Date().toISOString(),
+      clientName: payload.clientName || "",
+      clientPhone: payload.clientPhone || "",
     });
   });
 }
