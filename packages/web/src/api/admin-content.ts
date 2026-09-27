@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Context, Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { cloudflareStorage, readJsonFromR2, writeJsonToR2 } from "./cloudflare-storage";
@@ -14,13 +13,8 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "i
 const LEAD_STATUSES = new Set<LeadStatus>(["new", "contacted", "closed"]);
 const CONTENT_R2_KEY = "content/site-content.json";
 
-const defaultContentPath = fileURLToPath(
-  new URL("../../data/site-content.json", import.meta.url),
-);
-const defaultUploadDir = fileURLToPath(new URL("../../data/uploads", import.meta.url));
-
-const contentPath = process.env.CONTENT_FILE_PATH || defaultContentPath;
-const uploadDir = process.env.UPLOAD_DIR || defaultUploadDir;
+const contentPath = process.env.CONTENT_FILE_PATH || "data/site-content.json";
+const uploadDir = process.env.UPLOAD_DIR || "data/uploads";
 
 function secret() {
   return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || "";
