@@ -14,6 +14,22 @@ type CloudflareEnv = {
   ASSETS: AssetsBinding;
 };
 
+type LegacyLead = {
+  id?: string;
+  [key: string]: unknown;
+};
+
+type LegacyOrder = {
+  orderReference?: string;
+  [key: string]: unknown;
+};
+
+type LegacyPayload = {
+  content?: unknown;
+  leads?: LegacyLead[];
+  orders?: LegacyOrder[];
+};
+
 const CONTENT_KEY = "content/site-content.json";
 let seedPromise: Promise<void> | null = null;
 
@@ -45,12 +61,103 @@ function stripTrackingFromAdmin(html: string) {
     .replace(/\s*<!-- Meta Pixel Code \(noscript\) -->[\s\S]*?<!-- End Meta Pixel Code \(noscript\) -->\s*/g, "\n");
 }
 
+function migrationAuthorized(request: Request) {
+  const expected = process.env.MIGRATION_SECRET?.trim();
+  const provided = request.headers.get("x-migration-secret")?.trim();
+  return Boolean(expected && provided && expected === provided);
+}
+
+async function putJson(env: CloudflareEnv, key: string, value: unknown) {
+  await env.APP_STORAGE.put(key, `${JSON.stringify(value, null, 2)}\n`, {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+}
+
+async function writeInBatches(tasks: Array<() => Promise<void>>, batchSize = 40) {
+  for (let index = 0; index < tasks.length; index += batchSize) {
+    await Promise.all(tasks.slice(index, index + batchSize).map((task) => task()));
+  }
+}
+
+async function handleLegacyImport(request: Request, env: CloudflareEnv) {
+  if (!migrationAuthorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const payload = (await request.json().catch(() => null)) as LegacyPayload | null;
+  if (!payload || typeof payload !== "object") {
+    return Response.json({ error: "Invalid migration payload" }, { status: 400 });
+  }
+
+  if (payload.content && typeof payload.content === "object") {
+    await putJson(env, CONTENT_KEY, payload.content);
+  }
+
+  const leads = Array.isArray(payload.leads) ? payload.leads : [];
+  const orders = Array.isArray(payload.orders) ? payload.orders : [];
+  const tasks: Array<() => Promise<void>> = [];
+
+  for (const lead of leads) {
+    if (!lead?.id || !/^[a-zA-Z0-9._-]+$/.test(lead.id)) continue;
+    tasks.push(() => putJson(env, `leads/${lead.id}.json`, lead));
+  }
+
+  for (const order of orders) {
+    if (!order?.orderReference || !/^[a-zA-Z0-9._-]+$/.test(order.orderReference)) continue;
+    tasks.push(() => putJson(env, `orders/${order.orderReference}.json`, order));
+  }
+
+  await writeInBatches(tasks);
+
+  return Response.json({
+    ok: true,
+    content: Boolean(payload.content),
+    leads: leads.length,
+    orders: orders.length,
+  });
+}
+
+async function handleLegacyMediaImport(request: Request, env: CloudflareEnv) {
+  if (!migrationAuthorized(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const form = await request.formData();
+  const file = form.get("file");
+  const requestedName = String(form.get("name") || (file instanceof File ? file.name : ""));
+
+  if (!(file instanceof File) || !/^[a-zA-Z0-9._-]+$/.test(requestedName)) {
+    return Response.json({ error: "Invalid file" }, { status: 400 });
+  }
+
+  if (file.size > 8_000_000) {
+    return Response.json({ error: "File is too large" }, { status: 413 });
+  }
+
+  await env.APP_STORAGE.put(`media/${requestedName}`, await file.arrayBuffer(), {
+    httpMetadata: {
+      contentType: file.type || "application/octet-stream",
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+  });
+
+  return Response.json({ ok: true, name: requestedName });
+}
+
 export default {
   async fetch(request: Request, env: CloudflareEnv, executionCtx: unknown) {
     configureCloudflareStorage(env.APP_STORAGE);
     await ensureSeedContent(env);
 
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/_migration/import" && request.method === "POST") {
+      return handleLegacyImport(request, env);
+    }
+
+    if (url.pathname === "/api/_migration/media" && request.method === "POST") {
+      return handleLegacyMediaImport(request, env);
+    }
 
     if (url.pathname.startsWith("/api/")) {
       return app.fetch(request, env, executionCtx);
