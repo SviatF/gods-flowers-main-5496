@@ -2,6 +2,7 @@
   "name": "gods-flowers-school",
   "main": "src/cloudflare-worker.ts",
   "compatibility_date": "2026-09-27",
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "assets": {
     "directory": "./dist",
