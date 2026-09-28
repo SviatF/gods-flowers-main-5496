@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { brand, nav, offer } from "../../content/site";
-import { openLeadApplication } from "./lead-modal";
+import { openWayForPay } from "../../lib/wayforpay";
 
 function scrollToId(href: string) {
   const el = document.querySelector(href);
@@ -34,12 +34,9 @@ export function Header() {
   const buy = () => {
     setOpen(false);
     setOpenGroup(null);
-    const url = offer.paymentUrl.trim();
-    if (url) {
-      window.location.href = url;
-      return;
-    }
-    window.setTimeout(() => openLeadApplication(`Правильний догляд за квітами — ${offer.price}`), 60);
+    void openWayForPay().catch(() => {
+      window.alert("Оплата тимчасово недоступна. Спробуйте ще раз за кілька хвилин.");
+    });
   };
 
   return (
