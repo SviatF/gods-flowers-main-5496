@@ -1,7 +1,14 @@
 import { hero } from "../../content/site";
+import { openWayForPay } from "../../lib/wayforpay";
 
 function go(href: string) {
   document.querySelector(href)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function buy() {
+  void openWayForPay().catch(() => {
+    window.alert("Оплата тимчасово недоступна. Спробуйте ще раз за кілька хвилин.");
+  });
 }
 
 export function Hero() {
@@ -28,7 +35,7 @@ export function Hero() {
           </p>
 
           <div className="reveal flex flex-wrap items-center justify-center gap-4 lg:justify-start" style={{ ["--reveal-delay" as string]: "240ms" }}>
-            <button type="button" onClick={() => go("#courses")} className="group inline-flex items-center gap-3 rounded-full bg-cream px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-ink transition-colors duration-300 hover:bg-sand lg:bg-ink lg:text-cream lg:hover:bg-taupe-deep">
+            <button type="button" onClick={buy} className="group inline-flex items-center gap-3 rounded-full bg-cream px-8 py-4 text-[11px] uppercase tracking-[0.2em] text-ink transition-colors duration-300 hover:bg-sand lg:bg-ink lg:text-cream lg:hover:bg-taupe-deep">
               {hero.cta}
             </button>
             {hero.ctaSecondary ? (
